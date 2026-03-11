@@ -103,6 +103,8 @@ $publicaciones = $stmt->fetchAll();
             <a href="formularios.php"><i class="bi bi-file-earmark-text"></i> Formularios</a>
             <a href="graficos.php"><i class="bi bi-graph-up"></i> Gráficos</a>
             <a href="publicaciones.php" class="active"><i class="bi bi-megaphone"></i> Publicaciones</a>
+            <a href="notificaciones.php"><i class="bi bi-bell"></i> Notificaciones</a>
+            <a href="exportar.php"><i class="bi bi-download"></i> Exportar</a>
             <hr class="my-3 border-secondary">
             <a href="<?= PUBLIC_URL ?>/" target="_blank"><i class="bi bi-globe"></i> Ver sitio</a>
             <a href="<?= PUBLIC_URL ?>/logout.php"><i class="bi bi-box-arrow-left"></i> Cerrar sesión</a>

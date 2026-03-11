@@ -23,7 +23,7 @@ try {
     $stmt = $db->query("SELECT p.*, e.nombre as empresa_nombre FROM publicaciones p
                         LEFT JOIN empresas e ON p.empresa_id = e.id
                         WHERE p.estado = 'aprobado'
-                        ORDER BY p.created_at DESC LIMIT 3");
+                        ORDER BY COALESCE(p.fecha_publicacion, p.created_at) DESC LIMIT 3");
     $noticias = $stmt->fetchAll();
 } catch (Exception $e) {
     $noticias = [];

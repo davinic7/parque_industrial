@@ -10,15 +10,12 @@ if ($auth->isLoggedIn()) {
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verify_csrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
-        $error = 'Token de seguridad inválido. Intente nuevamente.';
-    }
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
     
-    if (!$error && (empty($email) || empty($password))) {
+    if (empty($email) || empty($password)) {
         $error = 'Complete todos los campos';
-    } elseif (!$error) {
+    } else {
         $result = $auth->login($email, $password);
         if ($result['success']) {
             redirect($result['user']['rol'] === 'empresa' ? EMPRESA_URL . '/dashboard.php' : MINISTERIO_URL . '/dashboard.php');
@@ -57,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="POST">
-            <?= csrf_field() ?>
             <div class="mb-3">
                 <label class="form-label">Email</label>
                 <input type="email" name="email" class="form-control" required>

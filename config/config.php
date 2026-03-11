@@ -7,63 +7,11 @@
 // Definir constante de acceso
 define('BASEPATH', dirname(__DIR__));
 
-// Cargar variables de entorno desde .env si existe
-$env_file = BASEPATH . '/.env';
-if (is_readable($env_file)) {
-    $lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '' || $line[0] === '#') {
-            continue;
-        }
-        if (strpos($line, '=') === false) {
-            continue;
-        }
-        list($key, $value) = explode('=', $line, 2);
-        $key = trim($key);
-        $value = trim($value);
-        if ($value === '') {
-            continue;
-        }
-        $first = isset($value[0]) ? $value[0] : '';
-        $last = isset($value[strlen($value) - 1]) ? $value[strlen($value) - 1] : '';
-        if (($first === '"' && $last === '"') || ($first === "'" && $last === "'")) {
-            $value = substr($value, 1, -1);
-        }
-        putenv($key . '=' . $value);
-        $_ENV[$key] = $value;
-    }
-}
-
-// Helper de entorno
-if (!function_exists('env')) {
-    function env($key, $default = null) {
-        $value = getenv($key);
-        return $value === false ? $default : $value;
-    }
-}
-
-function env_bool($key, $default = false) {
-    $value = env($key, null);
-    if ($value === null) {
-        return $default;
-    }
-    return in_array(strtolower((string)$value), ['1', 'true', 'yes', 'on'], true);
-}
-
-// Entorno de la app
-define('APP_ENV', env('APP_ENV', 'development'));
-
-// Configuración de errores (segun entorno)
-$debug_enabled = env_bool('APP_DEBUG', APP_ENV !== 'production');
+// Configuración de errores (cambiar en producción)
 error_reporting(E_ALL);
-ini_set('display_errors', $debug_enabled ? '1' : '0');
+ini_set('display_errors', 1); // Cambiar a 0 en producción
 ini_set('log_errors', 1);
-$log_dir = BASEPATH . '/logs';
-if (!is_dir($log_dir)) {
-    mkdir($log_dir, 0755, true);
-}
-ini_set('error_log', $log_dir . '/error.log');
+ini_set('error_log', BASEPATH . '/logs/error.log');
 
 // Zona horaria
 date_default_timezone_set('America/Argentina/Catamarca');
@@ -71,12 +19,11 @@ date_default_timezone_set('America/Argentina/Catamarca');
 // Configuración de sesiones
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', env('SESSION_COOKIE_SECURE', APP_ENV === 'production' ? '1' : '0'));
+ini_set('session.cookie_secure', 0); // Cambiar a 1 si usas HTTPS
 
-// URLs base - CORREGIDAS PARA DESPLIEGUE
-// En Render, como el DocumentRoot apunta a /public, SITE_URL ya es la raíz.
-define('SITE_URL', rtrim(env('SITE_URL', 'http://localhost/parque_industrial'), '/'));
-define('PUBLIC_URL', APP_ENV === 'production' ? SITE_URL : SITE_URL . '/public');
+// URLs base
+define('SITE_URL', 'http://localhost/parque_industrial');
+define('PUBLIC_URL', SITE_URL . '/public');
 define('EMPRESA_URL', SITE_URL . '/empresa');
 define('MINISTERIO_URL', SITE_URL . '/ministerio');
 

@@ -14,7 +14,7 @@ $token = trim($_GET['token'] ?? '');
 if ($token) {
     // Validar token
     $db = getDB();
-    $stmt = $db->prepare("SELECT id, email FROM usuarios WHERE token_recuperacion = ? AND token_expira > NOW() AND activo = 1");
+    $stmt = $db->prepare("SELECT id, email FROM usuarios WHERE token_recuperacion = ? AND activo = 1");
     $stmt->execute([$token]);
     $usuario = $stmt->fetch();
 
@@ -54,10 +54,10 @@ if ($token) {
             // Siempre mostrar éxito por seguridad (no revelar si el email existe)
             $mensaje = 'Si el email está registrado, recibirá instrucciones para restablecer su contraseña. Por favor contacte al administrador si no recibe el correo.';
 
-            if ($result['success'] && isset($result['token']) && defined('APP_ENV') && APP_ENV !== 'production') {
+            if ($result['success'] && isset($result['token'])) {
                 // En desarrollo mostramos el link directamente
                 $reset_link = PUBLIC_URL . '/recuperar.php?token=' . $result['token'];
-                $mensaje .= '<br><br><strong>Modo desarrollo - Link de recuperacion:</strong><br><a href="' . e($reset_link) . '">' . e($reset_link) . '</a>';
+                $mensaje .= '<br><br><strong>Modo desarrollo - Link de recuperación:</strong><br><a href="' . e($reset_link) . '">' . e($reset_link) . '</a>';
             }
         }
     }

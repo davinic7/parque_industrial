@@ -38,7 +38,7 @@ include __DIR__ . '/../includes/header.php';
                     </div>
                     <div class="col-6">
                         <div class="p-4 bg-light rounded-3">
-                            <div class="display-6 fw-bold text-success"><?= $stats['empresas_activas'] ?? 0 ?></div>
+                            <div class="display-6 fw-bold text-success"><?= $stats['total_empresas_activas'] ?? 0 ?></div>
                             <div class="text-muted">Empresas activas</div>
                         </div>
                     </div>

@@ -226,10 +226,7 @@ class Auth {
             // TODO: Enviar email con el token
             // mail($email, 'Recuperar contraseña', "Token: $token");
             
-            if (defined('APP_ENV') && APP_ENV !== 'production') {
-                return ['success' => true, 'token' => $token];
-            }
-            return ['success' => true];
+            return ['success' => true, 'token' => $token]; // En producción no devolver el token
             
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Error al procesar solicitud'];
