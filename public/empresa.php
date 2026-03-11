@@ -37,7 +37,7 @@ try {
     $datos = $stmt->fetch();
     
     // Obtener publicaciones de la empresa
-    $stmt = $db->prepare("SELECT * FROM publicaciones WHERE empresa_id = ? AND estado = 'aprobado' ORDER BY created_at DESC LIMIT 3");
+    $stmt = $db->prepare("SELECT * FROM publicaciones WHERE empresa_id = ? AND estado = 'aprobado' ORDER BY COALESCE(fecha_publicacion, created_at) DESC LIMIT 3");
     $stmt->execute([$empresa_id]);
     $publicaciones = $stmt->fetchAll();
     

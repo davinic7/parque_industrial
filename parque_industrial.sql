@@ -992,57 +992,6 @@ ALTER TABLE `respuestas_formulario`
 --
 ALTER TABLE `visitas_empresa`
   ADD CONSTRAINT `visitas_empresa_ibfk_1` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE;
-
---
--- Tablas para formularios dinamicos
---
-CREATE TABLE `formularios_dinamicos` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `titulo` varchar(255) NOT NULL,
-  `descripcion` text DEFAULT NULL,
-  `estado` enum('borrador','publicado','archivado') NOT NULL DEFAULT 'borrador',
-  `creado_por` int(11) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `idx_estado` (`estado`),
-  KEY `idx_creado_por` (`creado_por`),
-  CONSTRAINT `formularios_dinamicos_ibfk_1` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `formulario_preguntas` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `formulario_id` int(11) NOT NULL,
-  `tipo` enum('texto','textarea','numero','fecha','select','radio','checkbox','tabla') NOT NULL,
-  `etiqueta` varchar(255) NOT NULL,
-  `ayuda` varchar(255) DEFAULT NULL,
-  `requerido` tinyint(1) DEFAULT 0,
-  `opciones` longtext DEFAULT NULL,
-  `orden` int(11) DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `idx_formulario` (`formulario_id`),
-  CONSTRAINT `formulario_preguntas_ibfk_1` FOREIGN KEY (`formulario_id`) REFERENCES `formularios_dinamicos` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE `formulario_respuestas` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `formulario_id` int(11) NOT NULL,
-  `empresa_id` int(11) NOT NULL,
-  `usuario_id` int(11) DEFAULT NULL,
-  `estado` enum('borrador','enviado') NOT NULL DEFAULT 'borrador',
-  `respuestas` longtext NOT NULL,
-  `ip` varchar(45) DEFAULT NULL,
-  `enviado_at` datetime DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `idx_formulario_empresa` (`formulario_id`,`empresa_id`),
-  KEY `idx_estado` (`estado`),
-  CONSTRAINT `formulario_respuestas_ibfk_1` FOREIGN KEY (`formulario_id`) REFERENCES `formularios_dinamicos` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `formulario_respuestas_ibfk_2` FOREIGN KEY (`empresa_id`) REFERENCES `empresas` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `formulario_respuestas_ibfk_3` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
