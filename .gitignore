@@ -1,0 +1,22 @@
+# Uploads de usuarios
+public/uploads/logos/*
+public/uploads/publicaciones/*
+!public/uploads/logos/.gitkeep
+!public/uploads/publicaciones/.gitkeep
+
+# Logs
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Claude Code
+.claude/
