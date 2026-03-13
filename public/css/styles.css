@@ -79,9 +79,10 @@ img { max-width: 100%; height: auto; }
 
 /* Hero carrusel (banners editables) */
 .hero-carousel-wrap { padding: 0; overflow: hidden; }
-.hero-carousel-wrap .carousel { height: 100%; }
-.hero-carousel-wrap .carousel-inner { height: 100%; }
-.hero-carousel-wrap .carousel-item { height: 100%; position: relative; }
+.hero-carousel-wrap::before { display: none; }
+.hero-carousel-wrap .carousel { height: 100%; min-height: 380px; }
+.hero-carousel-wrap .carousel-inner { height: 100%; min-height: 380px; }
+.hero-carousel-wrap .carousel-item { height: 100%; min-height: 380px; position: relative; }
 .hero-carousel-wrap .hero-slide {
     position: absolute; inset: 0;
     background-size: cover;
