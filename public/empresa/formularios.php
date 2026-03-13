@@ -170,6 +170,7 @@ $formulario_bloqueado = ($datos && $datos['estado'] === 'aprobado');
             <a href="perfil.php"><i class="bi bi-building"></i> Mi Perfil</a>
             <a href="publicaciones.php"><i class="bi bi-megaphone"></i> Publicaciones</a>
             <a href="formularios.php" class="active"><i class="bi bi-file-earmark-text"></i> Formularios</a>
+            <a href="notificaciones.php"><i class="bi bi-bell"></i> Notificaciones</a>
             <hr class="my-3 border-secondary">
             <a href="<?= PUBLIC_URL ?>/" target="_blank"><i class="bi bi-globe"></i> Ver sitio público</a>
             <a href="<?= PUBLIC_URL ?>/logout.php"><i class="bi bi-box-arrow-left"></i> Cerrar sesión</a>
