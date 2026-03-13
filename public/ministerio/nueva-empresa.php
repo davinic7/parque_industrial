@@ -2,7 +2,7 @@
 /**
  * Nueva Empresa - Ministerio
  */
-require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../../config/config.php';
 
 if (!$auth->requireRole(['ministerio', 'admin'], PUBLIC_URL . '/login.php')) exit;
 
