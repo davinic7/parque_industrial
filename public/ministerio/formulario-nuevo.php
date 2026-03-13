@@ -118,6 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="formularios-dinamicos.php" class="active"><i class="bi bi-ui-checks"></i> Formularios dinamicos</a>
             <a href="graficos.php"><i class="bi bi-graph-up"></i> Gráficos y Datos</a>
             <a href="publicaciones.php"><i class="bi bi-megaphone"></i> Publicaciones</a>
+            <a href="banners.php"><i class="bi bi-images"></i> Banners inicio</a>
             <a href="notificaciones.php"><i class="bi bi-bell"></i> Notificaciones</a>
             <a href="exportar.php"><i class="bi bi-download"></i> Exportar</a>
             <hr class="my-3 border-secondary">

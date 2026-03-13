@@ -97,32 +97,12 @@ require_once BASEPATH . '/includes/header.php';
         </div>
         
         <div class="row g-4" id="empresasGrid">
-            <?php foreach ($empresas as $emp): ?>
-            <div class="col-md-6 col-lg-4">
-                <div class="empresa-card">
-                    <div class="card-img">
-                        <i class="bi bi-building" style="font-size: 4rem; color: #ccc;"></i>
-                    </div>
-                    <div class="card-body">
-                        <span class="card-rubro"><?= e($emp['rubro'] ?? 'Sin rubro') ?></span>
-                        <h5 class="card-title"><?= e($emp['nombre']) ?></h5>
-                        <p class="card-text mb-1"><i class="bi bi-geo-alt text-primary"></i> <?= e($emp['ubicacion'] ?? '-') ?></p>
-                        <?php if (!empty($emp['telefono'])): ?>
-                        <p class="card-text mb-1"><i class="bi bi-telephone text-primary"></i> <?= e($emp['telefono']) ?></p>
-                        <?php endif; ?>
-                        <?php if (!empty($emp['contacto_nombre'])): ?>
-                        <p class="card-text"><i class="bi bi-person text-primary"></i> <?= e($emp['contacto_nombre']) ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <div class="card-footer bg-transparent d-flex justify-content-between">
-                        <a href="empresa.php?id=<?= $emp['id'] ?>" class="btn btn-sm btn-primary">Ver perfil</a>
-                        <?php if (!empty($emp['telefono'])): ?>
-                        <a href="tel:<?= $emp['telefono'] ?>" class="btn btn-sm btn-outline-success"><i class="bi bi-telephone"></i></a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-            <?php endforeach; ?>
+            <?php
+            $card_options = ['show_visitas' => false, 'show_contact' => true, 'show_tel_button' => true];
+            foreach ($empresas as $emp) {
+                require BASEPATH . '/includes/partials/card_empresa.php';
+            }
+            ?>
         </div>
         
         <?php if (empty($empresas)): ?>

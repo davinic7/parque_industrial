@@ -32,16 +32,68 @@ try {
 // Obtener rubros para gráfico
 $rubros = get_rubros_con_conteo();
 
+// Banners del carrusel (editables por ministerio)
+$banners_home = [];
+try {
+    $db->query("SELECT 1 FROM banners_home LIMIT 1");
+    $stmt = $db->query("SELECT * FROM banners_home WHERE activo = 1 ORDER BY orden ASC, id ASC");
+    $banners_home = $stmt->fetchAll();
+} catch (Exception $e) {
+    $banners_home = [];
+}
+
 require_once BASEPATH . '/includes/header.php';
 ?>
 
-<!-- Hero Section -->
+<?php if (!empty($banners_home)): ?>
+<!-- Carrusel de banners (hero) -->
+<section class="hero-section hero-carousel-wrap">
+    <div id="heroCarousel" class="carousel slide carousel-fade h-100" data-bs-ride="carousel" data-bs-interval="5000">
+        <div class="carousel-inner h-100">
+            <?php foreach ($banners_home as $i => $b): ?>
+            <div class="carousel-item h-100 <?= $i === 0 ? 'active' : '' ?>">
+                <?php if ($b['tipo'] === 'video' && !empty($b['url_video'])): ?>
+                <div class="hero-slide hero-slide-video">
+                    <iframe src="<?= e($b['url_video']) ?>" title="Video" allowfullscreen class="hero-video-iframe"></iframe>
+                </div>
+                <?php elseif (!empty($b['imagen'])): ?>
+                <div class="hero-slide" style="background-image: url('<?= UPLOADS_URL ?>/<?= e($b['imagen']) ?>');"></div>
+                <?php endif; ?>
+                <?php if (!empty($b['titulo']) || !empty($b['subtitulo'])): ?>
+                <div class="hero-content">
+                    <?php if (!empty($b['titulo'])): ?><h1><?= e($b['titulo']) ?></h1><?php endif; ?>
+                    <?php if (!empty($b['subtitulo'])): ?><p class="hero-subtitle"><?= e($b['subtitulo']) ?></p><?php endif; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php if (count($banners_home) > 1): ?>
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Anterior</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Siguiente</span>
+        </button>
+        <div class="carousel-indicators">
+            <?php foreach ($banners_home as $i => $b): ?>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="<?= $i ?>" class="<?= $i === 0 ? 'active' : '' ?>" aria-label="Slide <?= $i + 1 ?>"></button>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</section>
+<?php else: ?>
+<!-- Hero Section (fallback si no hay banners) -->
 <section class="hero-section" style="background-image: url('<?= PUBLIC_URL ?>/img/hero-parque.jpg');">
     <div class="hero-content">
         <h1>Portal Estratégico de Parques Industriales</h1>
         <p class="hero-subtitle">Información del desarrollo industrial de la provincia de Catamarca</p>
     </div>
 </section>
+<?php endif; ?>
 
 <!-- Stat Cards -->
 <div class="stat-cards">
@@ -115,8 +167,7 @@ require_once BASEPATH . '/includes/header.php';
         
         <div class="row g-4">
             <?php if (empty($empresas_destacadas)): ?>
-                <!-- Datos de ejemplo cuando no hay empresas -->
-                <?php 
+                <?php
                 $ejemplos = [
                     ['nombre' => 'Algodonera del Valle S.A.', 'rubro' => 'Textil', 'ubicacion' => 'PI El Pantanillo'],
                     ['nombre' => 'Botas Catamarca S.A.', 'rubro' => 'Calzados', 'ubicacion' => 'PI El Pantanillo'],
@@ -125,47 +176,16 @@ require_once BASEPATH . '/includes/header.php';
                     ['nombre' => 'JL Uniformes S.R.L.', 'rubro' => 'Textil', 'ubicacion' => 'PI El Pantanillo'],
                     ['nombre' => 'ATC Antonio Tadeo Cabrera', 'rubro' => 'Metalúrgica', 'ubicacion' => 'PI El Pantanillo'],
                 ];
-                foreach ($ejemplos as $emp): ?>
-                <div class="col-md-6 col-lg-4">
-                    <div class="empresa-card">
-                        <div class="card-img">
-                            <i class="bi bi-building placeholder-icon" style="font-size: 4rem; color: #ccc;"></i>
-                        </div>
-                        <div class="card-body">
-                            <span class="card-rubro"><?= e($emp['rubro']) ?></span>
-                            <h5 class="card-title"><?= e($emp['nombre']) ?></h5>
-                            <p class="card-text"><i class="bi bi-geo-alt"></i> <?= e($emp['ubicacion']) ?></p>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <a href="#" class="btn btn-sm btn-outline-primary">Ver perfil</a>
-                            <small class="text-muted"><i class="bi bi-eye"></i> --</small>
-                        </div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
+                foreach ($ejemplos as $emp):
+                    $card_options = ['show_visitas' => false, 'show_contact' => false, 'show_tel_button' => false];
+                    require BASEPATH . '/includes/partials/card_empresa.php';
+                endforeach;
+                ?>
             <?php else: ?>
-                <?php foreach ($empresas_destacadas as $emp): ?>
-                <div class="col-md-6 col-lg-4">
-                    <div class="empresa-card">
-                        <div class="card-img">
-                            <?php if ($emp['logo']): ?>
-                                <img src="<?= UPLOADS_URL ?>/logos/<?= e($emp['logo']) ?>" alt="<?= e($emp['nombre']) ?>">
-                            <?php else: ?>
-                                <i class="bi bi-building placeholder-icon" style="font-size: 4rem; color: #ccc;"></i>
-                            <?php endif; ?>
-                        </div>
-                        <div class="card-body">
-                            <span class="card-rubro"><?= e($emp['rubro']) ?></span>
-                            <h5 class="card-title"><?= e($emp['nombre']) ?></h5>
-                            <p class="card-text"><i class="bi bi-geo-alt"></i> <?= e($emp['ubicacion']) ?></p>
-                        </div>
-                        <div class="card-footer bg-transparent">
-                            <a href="<?= PUBLIC_URL ?>/empresa.php?id=<?= $emp['id'] ?>" class="btn btn-sm btn-outline-primary">Ver perfil</a>
-                            <small class="text-muted"><i class="bi bi-eye"></i> <?= format_number($emp['visitas']) ?></small>
-                        </div>
-                    </div>
-                </div>
-                <?php endforeach; ?>
+                <?php foreach ($empresas_destacadas as $emp):
+                    $card_options = ['show_visitas' => true, 'show_contact' => false, 'show_tel_button' => false];
+                    require BASEPATH . '/includes/partials/card_empresa.php';
+                endforeach; ?>
             <?php endif; ?>
         </div>
         

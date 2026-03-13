@@ -63,6 +63,7 @@ $no_leidas = $stmt->fetchColumn();
             <a href="formularios.php"><i class="bi bi-file-earmark-text"></i> Formularios</a>
             <a href="graficos.php"><i class="bi bi-graph-up"></i> Gráficos y Datos</a>
             <a href="publicaciones.php"><i class="bi bi-megaphone"></i> Publicaciones</a>
+            <a href="banners.php"><i class="bi bi-images"></i> Banners inicio</a>
             <a href="notificaciones.php" class="active"><i class="bi bi-bell"></i> Notificaciones <?php if ($no_leidas): ?><span class="badge bg-danger"><?= $no_leidas ?></span><?php endif; ?></a>
             <a href="exportar.php"><i class="bi bi-download"></i> Exportar</a>
             <hr class="my-3 border-secondary">
