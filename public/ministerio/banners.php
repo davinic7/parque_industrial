@@ -1,6 +1,6 @@
 <?php
 /**
- * Carrusel del inicio - Banners editables por el ministerio con Cloudinary
+ * Carrusel del inicio - Banners editables con Cloudinary y soporte de Video
  */
 require_once __DIR__ . '/../../config/config.php';
 
@@ -9,7 +9,7 @@ if (!$auth->requireRole(['ministerio', 'admin'], PUBLIC_URL . '/login.php')) exi
 $page_title = 'Banners del inicio';
 $db = getDB();
 
-// Crear tabla si no existe (Chequeo de seguridad)
+// Chequeo de tabla
 $table_exists = false;
 try {
     $db->query("SELECT 1 FROM banners_home LIMIT 1");
@@ -19,7 +19,7 @@ try {
 }
 
 /**
- * Función para subir imágenes a Cloudinary vía cURL
+ * Función para subir imágenes a Cloudinary
  */
 function uploadToCloudinary($file_path) {
     $cloud_name = CLOUDINARY_CLOUD_NAME;
@@ -125,7 +125,14 @@ if ($table_exists && isset($_GET['editar'])) {
             <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
             <a href="empresas.php"><i class="bi bi-buildings"></i> Empresas</a>
             <a href="nueva-empresa.php"><i class="bi bi-plus-circle"></i> Nueva Empresa</a>
+            <a href="formularios.php"><i class="bi bi-file-earmark-text"></i> Formularios</a>
+            <a href="graficos.php"><i class="bi bi-graph-up"></i> Gráficos y Datos</a>
+            <a href="publicaciones.php"><i class="bi bi-megaphone"></i> Publicaciones</a>
             <a href="banners.php" class="active"><i class="bi bi-images"></i> Banners inicio</a>
+            <a href="notificaciones.php"><i class="bi bi-bell"></i> Notificaciones</a>
+            <a href="exportar.php"><i class="bi bi-download"></i> Exportar</a>
+            <hr class="my-3 border-secondary">
+            <a href="<?= PUBLIC_URL ?>/" target="_blank"><i class="bi bi-globe"></i> Ver sitio</a>
             <a href="<?= PUBLIC_URL ?>/logout.php"><i class="bi bi-box-arrow-left"></i> Cerrar sesión</a>
         </nav>
     </aside>
@@ -135,6 +142,9 @@ if ($table_exists && isset($_GET['editar'])) {
         <?php show_flash(); ?>
 
         <div class="card mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><?= $editar ? 'Editar banner' : 'Nuevo banner' ?></h5>
+            </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data">
                     <?= csrf_field() ?>
@@ -143,14 +153,42 @@ if ($table_exists && isset($_GET['editar'])) {
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Título</label>
-                            <input type="text" name="titulo" class="form-control" value="<?= e($editar['titulo'] ?? '') ?>">
+                            <input type="text" name="titulo" class="form-control" value="<?= e($editar['titulo'] ?? '') ?>" placeholder="Ej: Bienvenidos al Parque Industrial">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Subtítulo</label>
+                            <input type="text" name="subtitulo" class="form-control" value="<?= e($editar['subtitulo'] ?? '') ?>" placeholder="Texto secundario">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select" id="bannerTipo">
+                                <option value="imagen" <?= ($editar['tipo'] ?? '') === 'video' ? '' : 'selected' ?>>Imagen (Cloudinary)</option>
+                                <option value="video" <?= ($editar['tipo'] ?? '') === 'video' ? 'selected' : '' ?>>Video (YouTube/URL)</option>
+                            </select>
                         </div>
                         <div class="col-md-4" id="wrapImagen">
                             <label class="form-label">Imagen</label>
                             <input type="file" name="imagen" class="form-control" accept="image/*">
                         </div>
-                        <div class="col-12 mt-3">
-                            <button type="submit" class="btn btn-primary"><?= $editar ? 'Guardar' : 'Agregar' ?></button>
+                        <div class="col-md-4 d-none" id="wrapVideo">
+                            <label class="form-label">URL del video</label>
+                            <input type="url" name="url_video" class="form-control" value="<?= e($editar['url_video'] ?? '') ?>" placeholder="https://youtube.com/...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Orden</label>
+                            <input type="number" name="orden" class="form-control" value="<?= (int)($editar['orden'] ?? 0) ?>">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="activo" class="form-check-input" id="activo" <?= ($editar['activo'] ?? 1) ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="activo">Activo</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary"><?= $editar ? 'Guardar Cambios' : 'Agregar Banner' ?></button>
+                            <?php if ($editar): ?>
+                                <a href="banners.php" class="btn btn-outline-secondary">Cancelar</a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </form>
@@ -159,11 +197,13 @@ if ($table_exists && isset($_GET['editar'])) {
 
         <div class="card">
             <div class="table-responsive">
-                <table class="table align-middle">
-                    <thead>
+                <table class="table align-middle table-hover mb-0">
+                    <thead class="table-light">
                         <tr>
                             <th>Vista</th>
-                            <th>Título</th>
+                            <th>Título / Tipo</th>
+                            <th>Orden</th>
+                            <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
@@ -171,12 +211,23 @@ if ($table_exists && isset($_GET['editar'])) {
                         <?php foreach ($banners as $b): ?>
                         <tr>
                             <td>
-                                <img src="<?= e($b['imagen']) ?>" style="height: 50px; width: 80px; object-fit: cover; border-radius: 5px;">
+                                <?php if ($b['tipo'] === 'video'): ?>
+                                    <div class="bg-dark text-white d-flex align-items-center justify-content-center" style="height: 50px; width: 80px; border-radius: 5px;">
+                                        <i class="bi bi-play-circle"></i>
+                                    </div>
+                                <?php else: ?>
+                                    <img src="<?= e($b['imagen']) ?>" style="height: 50px; width: 80px; object-fit: cover; border-radius: 5px;">
+                                <?php endif; ?>
                             </td>
-                            <td><?= e($b['titulo']) ?></td>
+                            <td>
+                                <div><strong><?= e($b['titulo'] ?: 'Sin título') ?></strong></div>
+                                <small class="text-muted"><?= ucfirst($b['tipo']) ?></small>
+                            </td>
+                            <td><?= $b['orden'] ?></td>
+                            <td><?= $b['activo'] ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>' ?></td>
                             <td>
                                 <a href="banners.php?editar=<?= $b['id'] ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                                <form method="POST" class="d-inline">
+                                <form method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar banner?');">
                                     <?= csrf_field() ?>
                                     <input type="hidden" name="accion" value="eliminar">
                                     <input type="hidden" name="id" value="<?= $b['id'] ?>">
@@ -190,5 +241,25 @@ if ($table_exists && isset($_GET['editar'])) {
             </div>
         </div>
     </main>
+
+    <script>
+        // Lógica para mostrar/ocultar campos según el tipo seleccionado
+        const bannerTipo = document.getElementById('bannerTipo');
+        const wrapImagen = document.getElementById('wrapImagen');
+        const wrapVideo = document.getElementById('wrapVideo');
+
+        function toggleFields() {
+            if (bannerTipo.value === 'video') {
+                wrapImagen.classList.add('d-none');
+                wrapVideo.classList.remove('d-none');
+            } else {
+                wrapImagen.classList.remove('d-none');
+                wrapVideo.classList.add('d-none');
+            }
+        }
+
+        bannerTipo.addEventListener('change', toggleFields);
+        toggleFields(); // Ejecutar al cargar por si es una edición
+    </script>
 </body>
 </html>
