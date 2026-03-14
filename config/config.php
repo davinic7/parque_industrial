@@ -122,3 +122,7 @@ if (session_status() === PHP_SESSION_NONE) {
 if (empty($_SESSION[CSRF_TOKEN_NAME])) {
     $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
 }
+// Configuración de Cloudinary
+define('CLOUDINARY_CLOUD_NAME', 'dwazrbs09');
+define('CLOUDINARY_API_KEY', '315425839631656');
+define('CLOUDINARY_API_SECRET', 'OPF3X1CS0QtJTY5Z-7KQm46SJQs');
