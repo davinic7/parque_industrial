@@ -158,6 +158,11 @@ img { max-width: 100%; height: auto; }
 .stat-card .icon { width: 55px; height: 55px; background: linear-gradient(135deg, var(--primary-light), var(--primary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: #fff; font-size: 1.4rem; }
 .stat-card .number { font-size: 2.2rem; font-weight: 700; color: var(--primary); line-height: 1; }
 .stat-card .label { color: var(--gray-600); font-size: 0.85rem; margin-top: 5px; }
+/* Tarjetas que son enlaces: mismo aspecto, cursor pointer */
+.stat-card.stat-card-link { display: block; text-decoration: none; color: inherit; }
+.stat-card.stat-card-link:hover { color: inherit; box-shadow: var(--shadow-lg), 0 4px 15px rgba(26, 82, 118, 0.2); }
+.stat-card.stat-card-link .number { color: var(--primary); }
+.stat-card.stat-card-link .label { color: var(--gray-600); }
 
 /* Sections */
 .section { padding: 50px 0; }

@@ -113,66 +113,34 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
 </section>
 <?php endif; ?>
 
-<!-- Stat Cards -->
+<!-- Cuadros con números: todos son botones (enlaces) -->
 <div class="stat-cards">
-    <div class="stat-card">
+    <a href="<?= PUBLIC_URL ?>/empresas.php" class="stat-card stat-card-link" title="Ver empresas">
         <div class="icon"><i class="bi bi-building"></i></div>
-        <div class="number" data-count="<?= $stats['total_empresas_activas'] ?? 78 ?>"><?= $stats['total_empresas_activas'] ?? 78 ?></div>
+        <div class="number" data-count="<?= $stats['total_empresas_activas'] ?? 0 ?>"><?= $stats['total_empresas_activas'] ?? 0 ?></div>
         <div class="label">Empresas Activas</div>
-    </div>
-    <div class="stat-card">
+    </a>
+    <a href="<?= PUBLIC_URL ?>/estadisticas.php" class="stat-card stat-card-link" title="Ver empleados y datos">
         <div class="icon"><i class="bi bi-people"></i></div>
-        <div class="number" data-count="<?= $stats['total_empleados'] ?? 1250 ?>"><?= format_number($stats['total_empleados'] ?? 1250) ?></div>
+        <div class="number" data-count="<?= $stats['total_empleados'] ?? 0 ?>"><?= format_number($stats['total_empleados'] ?? 0) ?></div>
         <div class="label">Empleados</div>
-    </div>
-    <div class="stat-card">
+    </a>
+    <a href="<?= PUBLIC_URL ?>/empresas.php" class="stat-card stat-card-link" title="Ver sectores">
         <div class="icon"><i class="bi bi-grid"></i></div>
-        <div class="number" data-count="<?= $stats['total_rubros'] ?? 18 ?>"><?= $stats['total_rubros'] ?? 18 ?></div>
+        <div class="number" data-count="<?= $stats['total_rubros'] ?? 0 ?>"><?= $stats['total_rubros'] ?? 0 ?></div>
         <div class="label">Sectores Industriales</div>
-    </div>
-    <div class="stat-card">
+    </a>
+    <a href="<?= PUBLIC_URL ?>/mapa.php" class="stat-card stat-card-link" title="Mapa interactivo">
         <div class="icon"><i class="bi bi-geo-alt"></i></div>
         <div class="number">4</div>
         <div class="label">Zonas Industriales</div>
-    </div>
-    <div class="stat-card">
+    </a>
+    <a href="<?= PUBLIC_URL ?>/estadisticas.php#huella" class="stat-card stat-card-link" title="Huella de carbono">
         <div class="icon"><i class="bi bi-cloud-arrow-down"></i></div>
-        <div class="number">400</div>
+        <div class="number"><?= $stats['huella_carbono'] ?? '400' ?></div>
         <div class="label">tCO2e Huella Carbono</div>
-    </div>
+    </a>
 </div>
-
-<!-- Accesos Rápidos -->
-<section class="section bg-white">
-    <div class="container">
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-4 col-lg-2">
-                <a href="<?= PUBLIC_URL ?>/mapa.php" class="stat-card d-block text-decoration-none h-100">
-                    <div class="icon" style="background: linear-gradient(135deg, #3498db, #2980b9);"><i class="bi bi-map"></i></div>
-                    <div class="label fw-bold mt-2">Mapa Interactivo</div>
-                </a>
-            </div>
-            <div class="col-md-4 col-lg-2">
-                <a href="<?= PUBLIC_URL ?>/empresas.php" class="stat-card d-block text-decoration-none h-100">
-                    <div class="icon" style="background: linear-gradient(135deg, #27ae60, #1e8449);"><i class="bi bi-buildings"></i></div>
-                    <div class="label fw-bold mt-2">Industrias</div>
-                </a>
-            </div>
-            <div class="col-md-4 col-lg-2">
-                <a href="<?= PUBLIC_URL ?>/estadisticas.php" class="stat-card d-block text-decoration-none h-100">
-                    <div class="icon" style="background: linear-gradient(135deg, #f39c12, #d68910);"><i class="bi bi-bar-chart"></i></div>
-                    <div class="label fw-bold mt-2">Estadísticas</div>
-                </a>
-            </div>
-            <div class="col-md-4 col-lg-2">
-                <a href="<?= PUBLIC_URL ?>/estadisticas.php#huella" class="stat-card d-block text-decoration-none h-100">
-                    <div class="icon" style="background: linear-gradient(135deg, #1abc9c, #16a085);"><i class="bi bi-cloud"></i></div>
-                    <div class="label fw-bold mt-2">Huella de Carbono</div>
-                </a>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- Empresas Destacadas -->
 <section class="section">
