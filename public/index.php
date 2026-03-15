@@ -203,12 +203,12 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
     </div>
 </section>
 
-<!-- Mapa Preview -->
+<!-- Mapa Preview: solo zona del parque (no empresas) -->
 <section class="section">
     <div class="container">
         <div class="section-header">
-            <h2>Ubicación del Parque Industrial</h2>
-            <p>Explorá la ubicación de las empresas en el mapa interactivo</p>
+            <h2>Zona del Parque Industrial</h2>
+            <p>Entorno y ubicación del Parque Industrial El Pantanillo. Para ver las empresas en el mapa, ingresá al mapa interactivo.</p>
             <div class="section-divider"></div>
         </div>
         
@@ -218,7 +218,7 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
         
         <div class="text-center mt-4">
             <a href="<?= PUBLIC_URL ?>/mapa.php" class="btn btn-primary btn-lg">
-                <i class="bi bi-map me-2"></i>Ver mapa completo
+                <i class="bi bi-map me-2"></i>Ver mapa con empresas
             </a>
         </div>
     </div>
@@ -263,15 +263,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Mapa Preview
-    const map = L.map('mapPreview').setView([-28.4696, -65.7795], 12);
+    // Mapa Preview: solo zona del parque (no marcadores de empresas)
+    const parkCenter = [-28.4696, -65.7795];
+    const map = L.map('mapPreview').setView(parkCenter, 13);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Marcador del parque industrial
-    L.marker([-28.4696, -65.7795])
+    // Área aproximada del parque (círculo de ~1.2 km de radio) — solo zona, no empresas
+    L.circle(parkCenter, {
+        radius: 1200,
+        color: '#1a5276',
+        fillColor: '#1a5276',
+        fillOpacity: 0.15,
+        weight: 2
+    }).addTo(map).bindPopup('<strong>Parque Industrial El Pantanillo</strong><br>Zona industrial, Catamarca');
+
+    // Marcador central del parque
+    L.marker(parkCenter)
         .addTo(map)
         .bindPopup('<strong>Parque Industrial El Pantanillo</strong><br>Catamarca, Argentina');
 });
