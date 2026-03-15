@@ -64,7 +64,8 @@ img { max-width: 100%; height: auto; }
     height: 380px;
     background-color: var(--primary-dark);
     background-size: cover;
-    background-position: center top;
+    /* Prioriza zona media-baja: edificios/parque en vez de cielo */
+    background-position: center 65%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -112,7 +113,8 @@ img { max-width: 100%; height: auto; }
     position: absolute;
     inset: 0;
     background-size: cover;
-    background-position: center top;
+    /* En fotos aéreas, lo importante suele estar abajo: prioriza zona útil del parque */
+    background-position: center 65%;
     background-color: var(--primary-dark);
 }
 .hero-carousel-wrap .hero-slide::after {
