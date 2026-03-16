@@ -224,67 +224,33 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
     </div>
 </section>
 
+<?php
+$rubros_json = json_encode(array_slice($rubros, 0, 10));
+$extra_js = <<<JS
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Gráfico de Rubros
-    const rubrosData = <?= json_encode(array_slice($rubros, 0, 10)) ?>;
-    
-    // Si no hay datos, usar datos de ejemplo
-    const labels = rubrosData.length > 0 
-        ? rubrosData.map(r => r.nombre)
-        : ['Textil', 'Construcción', 'Metalúrgica', 'Alimentos', 'Transporte', 'Reciclado', 'Hormigón', 'Otros'];
-    
-    const data = rubrosData.length > 0 
-        ? rubrosData.map(r => r.total_empresas)
-        : [14, 11, 5, 5, 5, 4, 3, 31];
-
-    const colors = ['#3498db', '#e74c3c', '#95a5a6', '#27ae60', '#f39c12', '#2ecc71', '#7f8c8d', '#9b59b6', '#1abc9c', '#e67e22'];
-
-    new Chart(document.getElementById('chartRubros'), {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors,
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: { padding: 15, usePointStyle: true }
-                }
-            }
-        }
-    });
-
-    // Mapa desde internet (OpenStreetMap) con polígono del parque y contorno resaltado
-    const centroParque = [-28.4696, -65.7795];
-    // Polígono aproximado del Parque Industrial El Pantanillo (ajustar coordenadas si tenés el perímetro real)
-    const poligonoParque = [
-        [-28.4765, -65.7870],
-        [-28.4760, -65.7715],
-        [-28.4635, -65.7710],
-        [-28.4630, -65.7865],
-        [-28.4765, -65.7870]
-    ];
-    const mapParque = L.map('mapaParquePolygono').setView(centroParque, 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(mapParque);
-    const polygon = L.polygon(poligonoParque, {
-        color: '#1a5276',
-        fillColor: '#1a5276',
-        fillOpacity: 0.25,
-        weight: 3
-    }).addTo(mapParque).bindPopup('<strong>Parque Industrial El Pantanillo</strong><br>Catamarca, Argentina');
-    mapParque.fitBounds(polygon.getBounds());
+    var rubrosData = $rubros_json;
+    var labels = rubrosData.length > 0 ? rubrosData.map(function(r) { return r.nombre; }) : ['Textil', 'Construcción', 'Metalúrgica', 'Alimentos', 'Transporte', 'Reciclado', 'Hormigón', 'Otros'];
+    var data = rubrosData.length > 0 ? rubrosData.map(function(r) { return r.total_empresas; }) : [14, 11, 5, 5, 5, 4, 3, 31];
+    var colors = ['#3498db', '#e74c3c', '#95a5a6', '#27ae60', '#f39c12', '#2ecc71', '#7f8c8d', '#9b59b6', '#1abc9c', '#e67e22'];
+    if (document.getElementById('chartRubros') && typeof Chart !== 'undefined') {
+        new Chart(document.getElementById('chartRubros'), {
+            type: 'doughnut',
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { padding: 15, usePointStyle: true } } } }
+        });
+    }
+    if (typeof L !== 'undefined' && document.getElementById('mapaParquePolygono')) {
+        var centroParque = [-28.4696, -65.7795];
+        var poligonoParque = [[-28.4765, -65.7870], [-28.4760, -65.7715], [-28.4635, -65.7710], [-28.4630, -65.7865], [-28.4765, -65.7870]];
+        var mapParque = L.map('mapaParquePolygono').setView(centroParque, 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapParque);
+        var polygon = L.polygon(poligonoParque, { color: '#1a5276', fillColor: '#1a5276', fillOpacity: 0.25, weight: 3 }).addTo(mapParque).bindPopup('<strong>Parque Industrial El Pantanillo</strong><br>Catamarca, Argentina');
+        mapParque.fitBounds(polygon.getBounds());
+        setTimeout(function() { mapParque.invalidateSize(); }, 300);
+    }
 });
 </script>
-
-<?php require_once BASEPATH . '/includes/footer.php'; ?>
+JS;
+require_once BASEPATH . '/includes/footer.php';
+?>

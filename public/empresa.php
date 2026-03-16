@@ -37,9 +37,20 @@ try {
     $datos = $stmt->fetch();
     
     // Obtener publicaciones de la empresa
-    $stmt = $db->prepare("SELECT * FROM publicaciones WHERE empresa_id = ? AND estado = 'aprobado' ORDER BY created_at DESC LIMIT 3");
+    $stmt = $db->prepare("SELECT * FROM publicaciones WHERE empresa_id = ? AND estado = 'aprobado' ORDER BY created_at DESC LIMIT 10");
     $stmt->execute([$empresa_id]);
     $publicaciones = $stmt->fetchAll();
+    
+    // Galería de imágenes (carrusel)
+    $galeria = [];
+    try {
+        $db->query("SELECT 1 FROM empresa_imagenes LIMIT 1");
+        $stmt = $db->prepare("SELECT * FROM empresa_imagenes WHERE empresa_id = ? ORDER BY orden ASC, id ASC");
+        $stmt->execute([$empresa_id]);
+        $galeria = $stmt->fetchAll();
+    } catch (Exception $e) {
+        $galeria = [];
+    }
     
 } catch (Exception $e) {
     set_flash('error', 'Error al cargar la empresa');
@@ -111,6 +122,49 @@ require_once BASEPATH . '/includes/header.php';
                     <?php endif; ?>
                 </div>
                 
+                <!-- Carrusel de imágenes de la empresa -->
+                <?php
+                $imagenes_carrusel = $galeria;
+                if (empty($imagenes_carrusel) && !empty($empresa['imagen_portada'])) {
+                    $imagenes_carrusel = [['imagen' => $empresa['imagen_portada']]];
+                }
+                if (!empty($empresa['logo']) && empty($imagenes_carrusel)) {
+                    $imagenes_carrusel = [['imagen' => 'logos/' . $empresa['logo']]];
+                }
+                ?>
+                <?php if (!empty($imagenes_carrusel)): ?>
+                <div class="info-card mb-4">
+                    <h4 class="mb-3"><i class="bi bi-images text-primary me-2"></i>Galería</h4>
+                    <div id="galeriaEmpresa" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+                        <div class="carousel-inner rounded overflow-hidden">
+                            <?php foreach ($imagenes_carrusel as $idx => $img): ?>
+                            <?php
+                            $ruta = is_array($img) ? ($img['imagen'] ?? '') : $img;
+                            if (strpos($ruta, 'http') === 0) {
+                                $src = $ruta;
+                            } elseif (strpos($ruta, '/') !== false) {
+                                $src = UPLOADS_URL . '/' . $ruta;
+                            } else {
+                                $src = UPLOADS_URL . '/galeria_empresa/' . $ruta;
+                            }
+                            ?>
+                            <div class="carousel-item <?= $idx === 0 ? 'active' : '' ?>">
+                                <img src="<?= e($src) ?>" class="d-block w-100" style="max-height: 400px; object-fit: cover;" alt="Imagen <?= $idx + 1 ?>">
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php if (count($imagenes_carrusel) > 1): ?>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#galeriaEmpresa" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon"></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#galeriaEmpresa" data-bs-slide="next">
+                            <span class="carousel-control-next-icon"></span>
+                        </button>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
                 <!-- Datos de producción si existen -->
                 <?php if ($datos): ?>
                 <div class="info-card mb-4">
@@ -153,10 +207,34 @@ require_once BASEPATH . '/includes/header.php';
                 <?php endif; ?>
                 
                 <!-- Ubicación en mapa -->
-                <div class="info-card">
+                <div class="info-card mb-4">
                     <h4 class="mb-3"><i class="bi bi-geo-alt text-primary me-2"></i>Ubicación</h4>
                     <div id="empresaMap" style="height: 300px; border-radius: 8px;"></div>
                 </div>
+                
+                <!-- Noticias de la empresa -->
+                <?php if (!empty($publicaciones)): ?>
+                <div class="info-card">
+                    <h4 class="mb-3"><i class="bi bi-newspaper text-primary me-2"></i>Noticias</h4>
+                    <div class="row g-3">
+                        <?php foreach ($publicaciones as $pub): ?>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 h-100">
+                                <?php if (!empty($pub['imagen'])): ?>
+                                <img src="<?= UPLOADS_URL ?>/publicaciones/<?= e($pub['imagen']) ?>" alt="" class="img-fluid rounded mb-2" style="height: 120px; width: 100%; object-fit: cover;">
+                                <?php endif; ?>
+                                <h6 class="mb-1"><?= e($pub['titulo']) ?></h6>
+                                <p class="small text-muted mb-2"><?= e(truncate($pub['extracto'] ?? $pub['contenido'] ?? '', 100)) ?></p>
+                                <a href="<?= PUBLIC_URL ?>/noticias.php?ver=<?= $pub['id'] ?>" class="btn btn-sm btn-outline-primary">Ver más</a>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="mt-3">
+                        <a href="<?= PUBLIC_URL ?>/noticias.php?empresa=<?= $empresa_id ?>" class="btn btn-outline-primary">Ver todas las noticias</a>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
             
             <!-- Sidebar -->

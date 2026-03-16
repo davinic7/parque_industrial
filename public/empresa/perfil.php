@@ -24,6 +24,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Token de seguridad inválido. Recargue la página.';
     } else {
         try {
+            // Acciones de galería (antes del formulario principal)
+            if (isset($_POST['galeria_eliminar']) && isset($_POST['imagen_id'])) {
+                $id_img = (int)$_POST['imagen_id'];
+                $db->prepare("DELETE FROM empresa_imagenes WHERE id = ? AND empresa_id = ?")->execute([$id_img, $empresa_id]);
+                set_flash('success', 'Imagen eliminada de la galería.');
+                redirect('perfil.php');
+            }
+            if (!empty($_FILES['galeria_imagen']['name']) && $_FILES['galeria_imagen']['error'] === UPLOAD_ERR_OK) {
+                try {
+                    $db->query("SELECT 1 FROM empresa_imagenes LIMIT 1");
+                    $upload = upload_file($_FILES['galeria_imagen'], 'galeria_empresa', ALLOWED_IMAGE_TYPES);
+                    if ($upload['success']) {
+                        $stmt = $db->prepare("SELECT COALESCE(MAX(orden), 0) + 1 FROM empresa_imagenes WHERE empresa_id = ?");
+                        $stmt->execute([$empresa_id]);
+                        $orden = (int)$stmt->fetchColumn();
+                        $db->prepare("INSERT INTO empresa_imagenes (empresa_id, imagen, orden) VALUES (?, ?, ?)")->execute([$empresa_id, $upload['filename'], $orden]);
+                        set_flash('success', 'Imagen agregada a la galería.');
+                        redirect('perfil.php');
+                    } else {
+                        $error = $upload['error'];
+                    }
+                } catch (Exception $e) {
+                    $error = 'No se pudo subir la imagen.';
+                }
+            }
+
             // Obtener datos anteriores para el log
             $stmt = $db->prepare("SELECT * FROM empresas WHERE id = ?");
             $stmt->execute([$empresa_id]);
@@ -117,6 +143,19 @@ $rubros = $stmt->fetchAll(PDO::FETCH_COLUMN);
 // Obtener ubicaciones
 $stmt = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER BY nombre");
 $ubicaciones = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+// Galería de imágenes (tabla empresa_imagenes)
+$galeria_imagenes = [];
+$tabla_galeria_existe = false;
+try {
+    $db->query("SELECT 1 FROM empresa_imagenes LIMIT 1");
+    $tabla_galeria_existe = true;
+    $stmt = $db->prepare("SELECT * FROM empresa_imagenes WHERE empresa_id = ? ORDER BY orden ASC, id ASC");
+    $stmt->execute([$empresa_id]);
+    $galeria_imagenes = $stmt->fetchAll();
+} catch (Exception $e) {
+    $galeria_imagenes = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -231,6 +270,40 @@ $ubicaciones = $stmt->fetchAll(PDO::FETCH_COLUMN);
                             </div>
                         </div>
                     </div>
+
+                    <!-- Galería de imágenes (carrusel en perfil público) -->
+                    <?php if ($tabla_galeria_existe): ?>
+                    <div class="card mt-4">
+                        <div class="card-header bg-white"><h5 class="mb-0">Galería de imágenes</h5></div>
+                        <div class="card-body">
+                            <p class="text-muted small">Estas imágenes se muestran en el carrusel de tu perfil público.</p>
+                            <?php if (!empty($galeria_imagenes)): ?>
+                            <div class="row g-2 mb-3">
+                                <?php foreach ($galeria_imagenes as $img): ?>
+                                <div class="col-auto">
+                                    <div class="position-relative d-inline-block">
+                                        <img src="<?= UPLOADS_URL ?>/galeria_empresa/<?= e($img['imagen']) ?>" alt="" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                        <form method="POST" class="position-absolute top-0 end-0" style="transform: translate(50%, -50%);" onsubmit="return confirm('¿Eliminar esta imagen?');">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="galeria_eliminar" value="1">
+                                            <input type="hidden" name="imagen_id" value="<?= $img['id'] ?>">
+                                            <button type="submit" class="btn btn-danger btn-sm rounded-circle p-0" style="width: 24px; height: 24px;" title="Eliminar"><i class="bi bi-x small"></i></button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php endif; ?>
+                            <form method="POST" enctype="multipart/form-data" class="d-flex align-items-end gap-2">
+                                <?= csrf_field() ?>
+                                <div class="flex-grow-1">
+                                    <input type="file" name="galeria_imagen" class="form-control form-control-sm" accept="image/*" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-sm">Agregar imagen</button>
+                            </form>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- Contacto -->
                     <div class="card mt-4">
