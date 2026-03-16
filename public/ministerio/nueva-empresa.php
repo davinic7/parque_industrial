@@ -99,7 +99,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             if ($db->inTransaction()) $db->rollBack();
             error_log("Error al registrar empresa: " . $e->getMessage());
-            $error = 'Error al registrar la empresa. Intente nuevamente.';
+            $msg = $e->getMessage();
+            if (stripos($msg, 'Duplicate') !== false || stripos($msg, 'UNIQUE') !== false) {
+                $error = 'El email de acceso ya está registrado. Use otro email.';
+            } elseif (stripos($msg, 'Column') !== false || stripos($msg, 'Unknown column') !== false) {
+                $error = 'Error de base de datos (falta alguna tabla o columna). Revise las migraciones en Aiven.';
+            } else {
+                $error = 'Error al registrar la empresa: ' . (strlen($msg) > 120 ? substr($msg, 0, 120) . '…' : $msg);
+            }
         }
     }
 }
