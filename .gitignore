@@ -1,0 +1,17 @@
+# Entorno y secretos
+.env
+
+# Logs (mantener carpeta con .gitkeep)
+logs/*.log
+!logs/.gitkeep
+
+# Subidas de usuarios
+public/uploads/*
+!public/uploads/.gitkeep
+
+# SO / IDE
+Thumbs.db
+.DS_Store
+.idea/
+*.swp
+*.swo
