@@ -1,0 +1,44 @@
+[11-Mar-2026 16:46:48 America/Argentina/Catamarca] Error de conexión: SQLSTATE[HY000] [2002] No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+[11-Mar-2026 16:46:48 America/Argentina/Catamarca] PHP Fatal error:  Uncaught Exception: Error de conexión a la base de datos in C:\xampp\htdocs\parque_industrial\config\database.php:43
+Stack trace:
+#0 C:\xampp\htdocs\parque_industrial\config\database.php(49): Database->__construct()
+#1 C:\xampp\htdocs\parque_industrial\config\database.php(69): Database::getInstance()
+#2 C:\xampp\htdocs\parque_industrial\includes\auth.php(15): getDB()
+#3 C:\xampp\htdocs\parque_industrial\includes\auth.php(334): Auth->__construct()
+#4 C:\xampp\htdocs\parque_industrial\config\config.php(114): require_once('C:\\xampp\\htdocs...')
+#5 C:\xampp\htdocs\parque_industrial\public\index.php(5): require_once('C:\\xampp\\htdocs...')
+#6 {main}
+  thrown in C:\xampp\htdocs\parque_industrial\config\database.php on line 43
+[11-Mar-2026 17:09:22 America/Argentina/Catamarca] Error de conexión: SQLSTATE[HY000] [2006] MySQL server has gone away
+[11-Mar-2026 17:09:22 America/Argentina/Catamarca] PHP Fatal error:  Uncaught Exception: Error de conexión a la base de datos in C:\xampp\htdocs\parque_industrial\config\database.php:43
+Stack trace:
+#0 C:\xampp\htdocs\parque_industrial\config\database.php(49): Database->__construct()
+#1 C:\xampp\htdocs\parque_industrial\config\database.php(69): Database::getInstance()
+#2 C:\xampp\htdocs\parque_industrial\includes\auth.php(15): getDB()
+#3 C:\xampp\htdocs\parque_industrial\includes\auth.php(334): Auth->__construct()
+#4 C:\xampp\htdocs\parque_industrial\config\config.php(114): require_once('C:\\xampp\\htdocs...')
+#5 C:\xampp\htdocs\parque_industrial\public\index.php(5): require_once('C:\\xampp\\htdocs...')
+#6 {main}
+  thrown in C:\xampp\htdocs\parque_industrial\config\database.php on line 43
+[11-Mar-2026 17:09:28 America/Argentina/Catamarca] Error de conexión: SQLSTATE[HY000] [2006] MySQL server has gone away
+[11-Mar-2026 17:09:28 America/Argentina/Catamarca] PHP Fatal error:  Uncaught Exception: Error de conexión a la base de datos in C:\xampp\htdocs\parque_industrial\config\database.php:43
+Stack trace:
+#0 C:\xampp\htdocs\parque_industrial\config\database.php(49): Database->__construct()
+#1 C:\xampp\htdocs\parque_industrial\config\database.php(69): Database::getInstance()
+#2 C:\xampp\htdocs\parque_industrial\includes\auth.php(15): getDB()
+#3 C:\xampp\htdocs\parque_industrial\includes\auth.php(334): Auth->__construct()
+#4 C:\xampp\htdocs\parque_industrial\config\config.php(114): require_once('C:\\xampp\\htdocs...')
+#5 C:\xampp\htdocs\parque_industrial\public\index.php(5): require_once('C:\\xampp\\htdocs...')
+#6 {main}
+  thrown in C:\xampp\htdocs\parque_industrial\config\database.php on line 43
+[11-Mar-2026 17:11:09 America/Argentina/Catamarca] Error de conexión: SQLSTATE[HY000] [2006] MySQL server has gone away
+[11-Mar-2026 17:11:09 America/Argentina/Catamarca] PHP Fatal error:  Uncaught Exception: Error de conexión a la base de datos in C:\xampp\htdocs\parque_industrial\config\database.php:43
+Stack trace:
+#0 C:\xampp\htdocs\parque_industrial\config\database.php(49): Database->__construct()
+#1 C:\xampp\htdocs\parque_industrial\config\database.php(69): Database::getInstance()
+#2 C:\xampp\htdocs\parque_industrial\includes\auth.php(15): getDB()
+#3 C:\xampp\htdocs\parque_industrial\includes\auth.php(334): Auth->__construct()
+#4 C:\xampp\htdocs\parque_industrial\config\config.php(114): require_once('C:\\xampp\\htdocs...')
+#5 C:\xampp\htdocs\parque_industrial\public\index.php(5): require_once('C:\\xampp\\htdocs...')
+#6 {main}
+  thrown in C:\xampp\htdocs\parque_industrial\config\database.php on line 43
