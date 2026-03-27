@@ -210,7 +210,7 @@ $ubicaciones = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER
                                     <input type="number" name="longitud" id="longitud" class="form-control" step="any" value="<?= e($_POST['longitud'] ?? '') ?>">
                                 </div>
                                 <div class="col-12">
-                                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+                                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
                                     <div id="mapNueva" style="height: 300px; border-radius: 8px;"></div>
                                     <small class="text-muted">Haga clic en el mapa para fijar la ubicación de la empresa</small>
                                 </div>
@@ -297,7 +297,7 @@ $ubicaciones = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
     <script>
         const map = L.map('mapNueva').setView([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>], <?= MAP_DEFAULT_ZOOM ?>);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);

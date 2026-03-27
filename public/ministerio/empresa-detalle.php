@@ -91,7 +91,7 @@ $perfil_completo = round(($completos / count($campos_perfil)) * 100);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
 </head>
 <body>
     <aside class="sidebar">
@@ -336,7 +336,7 @@ $perfil_completo = round(($completos / count($campos_perfil)) * 100);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <?php if ($empresa['latitud'] && $empresa['longitud']): ?>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
     <script>
         const map = L.map('mapDetalle').setView([<?= (float)$empresa['latitud'] ?>, <?= (float)$empresa['longitud'] ?>], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
