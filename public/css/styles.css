@@ -238,7 +238,7 @@ img { max-width: 100%; height: auto; }
 .badge-inactiva { background: #f8d7da; color: #721c24; }
 
 /* Sidebar Admin */
-.sidebar { width: 260px; min-height: 100vh; background: var(--primary-dark); position: fixed; left: 0; top: 0; z-index: 100; }
+.sidebar { width: 260px; height: 100vh; background: var(--primary-dark); position: fixed; left: 0; top: 0; z-index: 100; display: flex; flex-direction: column; overflow-y: auto; }
 .sidebar-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
 .sidebar-header img { height: 40px; }
 .sidebar-menu { padding: 15px 0; }
