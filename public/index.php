@@ -120,12 +120,12 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
         <div class="number" data-count="<?= $stats['total_empresas_activas'] ?? 0 ?>"><?= $stats['total_empresas_activas'] ?? 0 ?></div>
         <div class="label">Empresas Activas</div>
     </a>
-    <a href="<?= PUBLIC_URL ?>/estadisticas.php" class="stat-card stat-card-link" title="Ver empleados y datos">
+    <a href="<?= PUBLIC_URL ?>/noticias.php?tipo=empleados" class="stat-card stat-card-link" title="Noticias sobre empleados">
         <div class="icon"><i class="bi bi-people"></i></div>
         <div class="number" data-count="<?= $stats['total_empleados'] ?? 0 ?>"><?= format_number($stats['total_empleados'] ?? 0) ?></div>
         <div class="label">Empleados</div>
     </a>
-    <a href="<?= PUBLIC_URL ?>/empresas.php" class="stat-card stat-card-link" title="Ver sectores">
+    <a href="<?= PUBLIC_URL ?>/parque.php" class="stat-card stat-card-link" title="Mapa del parque industrial">
         <div class="icon"><i class="bi bi-grid"></i></div>
         <div class="number" data-count="<?= $stats['total_rubros'] ?? 0 ?>"><?= $stats['total_rubros'] ?? 0 ?></div>
         <div class="label">Sectores Industriales</div>

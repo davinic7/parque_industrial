@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
             redirect('publicaciones.php' . ($id ? "?editar=$id" : '?nueva=1'));
         }
 
-        if (!in_array($tipo, ['noticia', 'evento', 'promocion', 'comunicado'])) {
+        if (!in_array($tipo, ['noticia', 'evento', 'promocion', 'comunicado', 'empleados'])) {
             $tipo = 'noticia';
         }
 
@@ -193,7 +193,7 @@ $mostrar_form = isset($_GET['nueva']) || $editando;
                             <label class="form-label">Tipo</label>
                             <select name="tipo" class="form-select">
                                 <?php
-                                $tipos = ['noticia' => 'Noticia', 'evento' => 'Evento', 'promocion' => 'Promoción', 'comunicado' => 'Comunicado'];
+                                $tipos = ['noticia' => 'Noticia', 'evento' => 'Evento', 'promocion' => 'Promoción', 'comunicado' => 'Comunicado', 'empleados' => 'Empleados'];
                                 foreach ($tipos as $val => $label):
                                 ?>
                                 <option value="<?= $val ?>" <?= ($editando['tipo'] ?? '') === $val ? 'selected' : '' ?>><?= $label ?></option>
@@ -252,7 +252,7 @@ $mostrar_form = isset($_GET['nueva']) || $editando;
                         </td>
                         <td>
                             <?php
-                            $tipo_badge = ['noticia' => 'bg-info', 'evento' => 'bg-primary', 'promocion' => 'bg-warning text-dark', 'comunicado' => 'bg-secondary'];
+                            $tipo_badge = ['noticia' => 'bg-info', 'evento' => 'bg-primary', 'promocion' => 'bg-warning text-dark', 'comunicado' => 'bg-secondary', 'empleados' => 'bg-success'];
                             ?>
                             <span class="badge <?= $tipo_badge[$pub['tipo']] ?? 'bg-secondary' ?>"><?= ucfirst($pub['tipo']) ?></span>
                         </td>

@@ -99,6 +99,7 @@ include __DIR__ . '/../includes/header.php';
                             <option value="evento" <?= $filtro_tipo === 'evento' ? 'selected' : '' ?>>Eventos</option>
                             <option value="promocion" <?= $filtro_tipo === 'promocion' ? 'selected' : '' ?>>Promociones</option>
                             <option value="comunicado" <?= $filtro_tipo === 'comunicado' ? 'selected' : '' ?>>Comunicados</option>
+                            <option value="empleados" <?= $filtro_tipo === 'empleados' ? 'selected' : '' ?>>Empleados</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -134,7 +135,7 @@ include __DIR__ . '/../includes/header.php';
                     <?php endif; ?>
                     <div class="card-body">
                         <?php
-                        $tipo_badge = ['noticia' => 'bg-info', 'evento' => 'bg-primary', 'promocion' => 'bg-warning text-dark', 'comunicado' => 'bg-secondary'];
+                        $tipo_badge = ['noticia' => 'bg-info', 'evento' => 'bg-primary', 'promocion' => 'bg-warning text-dark', 'comunicado' => 'bg-secondary', 'empleados' => 'bg-success'];
                         ?>
                         <span class="badge <?= $tipo_badge[$pub['tipo']] ?? 'bg-secondary' ?> mb-2"><?= ucfirst($pub['tipo']) ?></span>
                         <h5 class="card-title"><?= e($pub['titulo']) ?></h5>

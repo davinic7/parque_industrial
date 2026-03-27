@@ -145,6 +145,7 @@ $publicaciones = $stmt->fetchAll();
                             <option value="evento" <?= $filtro_tipo === 'evento' ? 'selected' : '' ?>>Evento</option>
                             <option value="promocion" <?= $filtro_tipo === 'promocion' ? 'selected' : '' ?>>Promoción</option>
                             <option value="comunicado" <?= $filtro_tipo === 'comunicado' ? 'selected' : '' ?>>Comunicado</option>
+                            <option value="empleados" <?= $filtro_tipo === 'empleados' ? 'selected' : '' ?>>Empleados</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -172,7 +173,7 @@ $publicaciones = $stmt->fetchAll();
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-2">
                             <?php
-                            $tipo_badge = ['noticia' => 'bg-info', 'evento' => 'bg-primary', 'promocion' => 'bg-warning text-dark', 'comunicado' => 'bg-secondary'];
+                            $tipo_badge = ['noticia' => 'bg-info', 'evento' => 'bg-primary', 'promocion' => 'bg-warning text-dark', 'comunicado' => 'bg-secondary', 'empleados' => 'bg-success'];
                             $estado_badge = ['borrador' => 'bg-secondary', 'pendiente' => 'bg-warning text-dark', 'aprobado' => 'bg-success', 'rechazado' => 'bg-danger'];
                             ?>
                             <span class="badge <?= $tipo_badge[$pub['tipo']] ?? 'bg-secondary' ?>"><?= ucfirst($pub['tipo']) ?></span>
