@@ -23,15 +23,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
     }
 }
 
-$stmt = $db->query("
-    SELECT 
-        f.*,
-        (SELECT COUNT(*) FROM formulario_preguntas p WHERE p.formulario_id = f.id) as total_preguntas,
-        (SELECT COUNT(*) FROM formulario_respuestas r WHERE r.formulario_id = f.id AND r.estado = 'enviado') as total_respuestas
-    FROM formularios_dinamicos f
-    ORDER BY f.created_at DESC
-");
+try {
+    $stmt = $db->query("
+        SELECT
+            f.*,
+            (SELECT COUNT(*) FROM formulario_preguntas p WHERE p.formulario_id = f.id) AS total_preguntas,
+            (SELECT COUNT(*) FROM formulario_respuestas r WHERE r.formulario_id = f.id AND r.estado = 'enviado') AS total_respuestas,
+            (SELECT COUNT(*) FROM formulario_envios fe WHERE fe.formulario_id = f.id) AS total_envios
+        FROM formularios_dinamicos f
+        ORDER BY f.created_at DESC
+    ");
+} catch (Exception $e) {
+    $stmt = $db->query("
+        SELECT
+            f.*,
+            (SELECT COUNT(*) FROM formulario_preguntas p WHERE p.formulario_id = f.id) AS total_preguntas,
+            (SELECT COUNT(*) FROM formulario_respuestas r WHERE r.formulario_id = f.id AND r.estado = 'enviado') AS total_respuestas
+        FROM formularios_dinamicos f
+        ORDER BY f.created_at DESC
+    ");
+}
 $formularios = $stmt->fetchAll();
+foreach ($formularios as &$f) {
+    if (!isset($f['total_envios'])) {
+        $f['total_envios'] = 0;
+    }
+}
+unset($f);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -71,7 +89,7 @@ $formularios = $stmt->fetchAll();
                 </thead>
                 <tbody>
                     <?php if (empty($formularios)): ?>
-                    <tr><td colspan="6" class="text-center text-muted py-4">No hay formularios creados</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">No hay formularios creados</td></tr>
                     <?php endif; ?>
                     <?php foreach ($formularios as $f): ?>
                     <tr>
@@ -89,9 +107,12 @@ $formularios = $stmt->fetchAll();
                         </td>
                         <td><?= (int)$f['total_preguntas'] ?></td>
                         <td><?= (int)$f['total_respuestas'] ?></td>
+                        <td><?= (int)$f['total_envios'] ?></td>
                         <td><?= format_datetime($f['created_at']) ?></td>
                         <td class="text-nowrap">
                             <a href="formulario-editar.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+                            <a href="formulario-enviar.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline-info" title="Enviar a empresas"><i class="bi bi-send"></i></a>
+                            <a href="formulario-seguimiento.php?formulario_id=<?= $f['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Historial envíos"><i class="bi bi-graph-up-arrow"></i></a>
                             <a href="formulario-respuestas.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline-success" title="Ver respuestas"><i class="bi bi-clipboard-data"></i></a>
                             <form method="POST" class="d-inline">
                                 <?= csrf_field() ?>

@@ -100,6 +100,7 @@ include __DIR__ . '/../includes/header.php';
 
                         <?php elseif (!$mensaje): ?>
                         <p class="text-muted text-center mb-4">Ingrese su email y le enviaremos instrucciones para recuperar su contraseña.</p>
+                        <p class="text-muted small text-center">El enlace de recuperación es válido por 1 hora. Por seguridad hay un límite de solicitudes por hora desde la misma red.</p>
                         <form method="POST">
                             <?= csrf_field() ?>
                             <div class="mb-3">

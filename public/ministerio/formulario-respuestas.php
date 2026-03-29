@@ -9,6 +9,7 @@ if (!$auth->requireRole(['ministerio', 'admin'], PUBLIC_URL . '/login.php')) exi
 $db = getDB();
 $page_title = 'Respuestas de formulario';
 $form_id = (int)($_GET['id'] ?? 0);
+$filtro_empresa = isset($_GET['empresa']) ? (int)$_GET['empresa'] : 0;
 
 if ($form_id <= 0) {
     set_flash('error', 'Formulario no especificado.');
@@ -31,14 +32,20 @@ $stmt->execute([$form_id]);
 $preguntas = $stmt->fetchAll(PDO::FETCH_UNIQUE);
 
 // Cargar respuestas
-$stmt = $db->prepare("
+$sqlResp = "
     SELECT r.*, e.nombre AS empresa_nombre, e.cuit
     FROM formulario_respuestas r
     INNER JOIN empresas e ON r.empresa_id = e.id
     WHERE r.formulario_id = ?
-    ORDER BY r.created_at DESC
-");
-$stmt->execute([$form_id]);
+";
+$paramsResp = [$form_id];
+if ($filtro_empresa > 0) {
+    $sqlResp .= " AND r.empresa_id = ?";
+    $paramsResp[] = $filtro_empresa;
+}
+$sqlResp .= " ORDER BY r.created_at DESC";
+$stmt = $db->prepare($sqlResp);
+$stmt->execute($paramsResp);
 $respuestas = $stmt->fetchAll();
 
 ?>

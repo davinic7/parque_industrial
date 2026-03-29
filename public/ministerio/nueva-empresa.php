@@ -49,15 +49,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $db->beginTransaction();
 
-                    // Crear usuario con contraseña temporal
-                    $temp_password = bin2hex(random_bytes(4)); // 8 caracteres hex
-                    $result = $auth->register($email_usuario, $temp_password, 'empresa');
+                    $modo_registro = $_POST['modo_registro'] ?? 'activacion_email';
+                    $usuario_id = null;
+                    $temp_password = null;
+                    $token_activacion = null;
 
-                    if (!$result['success']) {
-                        throw new Exception($result['error']);
+                    if ($modo_registro === 'activacion_email') {
+                        $token_activacion = bin2hex(random_bytes(32));
+                        $token_exp = date('Y-m-d H:i:s', strtotime('+48 hours'));
+                        $result = $auth->registerEmpresaPending($email_usuario, $token_activacion, $token_exp);
+                        if (!$result['success']) {
+                            throw new Exception($result['error']);
+                        }
+                        $usuario_id = $result['user_id'];
+                    } else {
+                        $temp_password = bin2hex(random_bytes(4));
+                        $result = $auth->register($email_usuario, $temp_password, 'empresa');
+                        if (!$result['success']) {
+                            throw new Exception($result['error']);
+                        }
+                        $usuario_id = $result['user_id'];
                     }
-
-                    $usuario_id = $result['user_id'];
 
                     // Crear empresa
                     $stmt = $db->prepare("
@@ -87,13 +99,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     log_activity('empresa_registrada', 'empresas', $empresa_id);
 
-                    $mensaje = "Empresa registrada correctamente. Credenciales de acceso: Email: $email_usuario / Contraseña temporal: $temp_password";
-                    if (!empty($_POST['enviar_credenciales_email'])) {
-                        $url_login = defined('PUBLIC_URL') ? (PUBLIC_URL . '/login.php') : '';
-                        if (enviar_email_credenciales_empresa($email_usuario, $nombre, $temp_password, $url_login)) {
-                            $mensaje .= " Se envió un email con las credenciales al usuario.";
+                    if ($modo_registro === 'activacion_email' && $token_activacion) {
+                        $url_act = rtrim(PUBLIC_URL, '/') . '/activar-cuenta.php?token=' . urlencode($token_activacion);
+                        $mensaje = 'Empresa registrada. El usuario debe activar la cuenta con el enlace enviado por email.';
+                        if (!empty($_POST['enviar_credenciales_email'])) {
+                            if (can_send_mail() && enviar_email_activacion_empresa($email_usuario, $nombre, $url_act)) {
+                                $mensaje .= ' Email de activación enviado.';
+                            } else {
+                                $mensaje .= ' No se pudo enviar el email. Enlace de activación: ' . $url_act;
+                            }
                         } else {
-                            $mensaje .= " No se pudo enviar el email (revise la configuración del servidor); las credenciales se muestran aquí.";
+                            $mensaje .= ' Enlace de activación (guarde o envíe manualmente): ' . $url_act;
+                        }
+                    } else {
+                        $mensaje = "Empresa registrada correctamente. Credenciales de acceso: Email: $email_usuario / Contraseña temporal: $temp_password";
+                        if (!empty($_POST['enviar_credenciales_email'])) {
+                            $url_login = defined('PUBLIC_URL') ? (PUBLIC_URL . '/login.php') : '';
+                            if (enviar_email_credenciales_empresa($email_usuario, $nombre, $temp_password, $url_login)) {
+                                $mensaje .= " Se envió un email con las credenciales al usuario.";
+                            } else {
+                                $mensaje .= " No se pudo enviar el email (revise la configuración del servidor); las credenciales se muestran aquí.";
+                            }
                         }
                     }
                 }
@@ -231,9 +257,16 @@ $ubicaciones = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER
                     <div class="card">
                         <div class="card-header bg-success text-white"><h5 class="mb-0">Acceso al Sistema</h5></div>
                         <div class="card-body">
-                            <div class="alert alert-info mb-3">
-                                <i class="bi bi-info-circle me-2"></i>
-                                Se creará una cuenta de usuario. La contraseña temporal se mostrará tras el registro.
+                            <div class="mb-3">
+                                <label class="form-label d-block">Modo de alta de usuario</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modo_registro" id="modoActivacion" value="activacion_email" <?= ($_POST['modo_registro'] ?? 'activacion_email') !== 'password_temporal' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="modoActivacion">Activación por email (recomendado): la empresa define su contraseña con un enlace seguro</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="modo_registro" id="modoTemp" value="password_temporal" <?= ($_POST['modo_registro'] ?? '') === 'password_temporal' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="modoTemp">Contraseña temporal (clásico): se genera y se muestra o envía por email</label>
+                                </div>
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -262,7 +295,7 @@ $ubicaciones = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER
                             </div>
                             <div class="form-check mb-2">
                                 <input type="checkbox" name="enviar_credenciales_email" class="form-check-input" id="enviarEmail" checked>
-                                <label class="form-check-label" for="enviarEmail">Enviar credenciales por email al usuario</label>
+                                <label class="form-check-label" for="enviarEmail">Enviar email al usuario (activación o credenciales según el modo elegido)</label>
                             </div>
                             <div class="form-check">
                                 <input type="checkbox" name="perfil_publico" class="form-check-input" id="perfilPublico">

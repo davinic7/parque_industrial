@@ -363,6 +363,85 @@ function safe_json_encode($data) {
  * Usa mail() de PHP. Requiere servidor de correo configurado.
  * @return bool true si se envió, false si falló
  */
+/**
+ * IP del cliente (evitar confiar en X-Forwarded-For salvo proxy conocido).
+ */
+function client_ip(): string {
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+}
+
+/**
+ * Indica si hay soporte mínimo para enviar correos (mail() de PHP).
+ */
+function can_send_mail(): bool {
+    return function_exists('mail');
+}
+
+/**
+ * Email de activación de cuenta empresa (enlace con token).
+ */
+function enviar_email_activacion_empresa(string $destino_email, string $nombre_empresa, string $url_activacion): bool {
+    $asunto = 'Active su cuenta - Parque Industrial';
+    $cuerpo = "Estimado/a,\n\n";
+    $cuerpo .= "Se ha registrado la empresa \"" . $nombre_empresa . "\" en el sistema del Parque Industrial.\n\n";
+    $cuerpo .= "Para crear su contraseña y activar el acceso, abra el siguiente enlace (válido por tiempo limitado):\n\n";
+    $cuerpo .= $url_activacion . "\n\n";
+    $cuerpo .= "Si usted no solicitó este registro, ignore este mensaje.\n\n";
+    $cuerpo .= "Saludos cordiales,\nMinisterio - Parque Industrial";
+    $headers = "From: noreply@parqueindustrial.gob.ar\r\n";
+    $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    $ok = @mail($destino_email, $asunto, $cuerpo, $headers);
+    if (!$ok) {
+        error_log("enviar_email_activacion: fallo al enviar a $destino_email");
+    }
+    return $ok;
+}
+
+/**
+ * Email con enlace para restablecer contraseña.
+ */
+function enviar_email_recuperacion_password(string $destino_email, string $url_reset): bool {
+    $asunto = 'Restablecer contraseña - Parque Industrial';
+    $cuerpo = "Recibimos una solicitud para restablecer la contraseña de su cuenta.\n\n";
+    $cuerpo .= "Si fue usted, abra este enlace (válido por 1 hora):\n\n";
+    $cuerpo .= $url_reset . "\n\n";
+    $cuerpo .= "Si no solicitó el cambio, ignore este correo.\n\n";
+    $cuerpo .= "Parque Industrial de Catamarca";
+    $headers = "From: noreply@parqueindustrial.gob.ar\r\n";
+    $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    $ok = @mail($destino_email, $asunto, $cuerpo, $headers);
+    if (!$ok) {
+        error_log("enviar_email_recuperacion: fallo al enviar a $destino_email");
+    }
+    return $ok;
+}
+
+/**
+ * Aviso de contraseña cambiada (opcional).
+ */
+function enviar_email_password_cambiada(string $destino_email): bool {
+    $asunto = 'Su contraseña fue actualizada - Parque Industrial';
+    $cuerpo = "Le informamos que la contraseña de su cuenta se modificó correctamente.\n\n";
+    $cuerpo .= "Si no fue usted, contacte de inmediato al administrador.\n";
+    $headers = "From: noreply@parqueindustrial.gob.ar\r\n";
+    $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    return @mail($destino_email, $asunto, $cuerpo, $headers);
+}
+
+/**
+ * Notificación por correo: nuevo formulario dinámico asignado.
+ */
+function enviar_email_formulario_nuevo(string $destino_email, string $titulo_formulario, string $url_formulario): bool {
+    $asunto = 'Nuevo formulario disponible - Parque Industrial';
+    $cuerpo = "Tiene un formulario pendiente de completar:\n\n";
+    $cuerpo .= $titulo_formulario . "\n\n";
+    $cuerpo .= "Acceda desde:\n" . $url_formulario . "\n\n";
+    $cuerpo .= "Parque Industrial de Catamarca";
+    $headers = "From: noreply@parqueindustrial.gob.ar\r\n";
+    $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    return @mail($destino_email, $asunto, $cuerpo, $headers);
+}
+
 function enviar_email_credenciales_empresa($destino_email, $nombre_empresa, $password_temporal, $url_login = '') {
     $asunto = 'Credenciales de acceso - Parque Industrial';
     $url_login = $url_login ?: (defined('EMPRESA_URL') ? EMPRESA_URL . '/../login.php' : '');

@@ -34,6 +34,22 @@ if (!$formulario) {
 } else {
     $page_title = $formulario['titulo'];
 
+    $plazo_info = null;
+    try {
+        $stPl = $db->prepare("
+            SELECT COALESCE(fd.plazo_hasta, fe.fecha_limite) AS limite
+            FROM formulario_destinatarios fd
+            INNER JOIN formulario_envios fe ON fe.id = fd.envio_id
+            WHERE fd.empresa_id = ? AND fe.formulario_id = ? AND fd.respondido = 0
+            ORDER BY fe.created_at DESC
+            LIMIT 1
+        ");
+        $stPl->execute([$empresa_id, $formulario_id]);
+        $plazo_info = $stPl->fetch();
+    } catch (Exception $e) {
+        $plazo_info = null;
+    }
+
     // Cargar preguntas
     $stmt = $db->prepare("SELECT * FROM formulario_preguntas WHERE formulario_id = ? ORDER BY orden, id");
     $stmt->execute([$formulario_id]);
@@ -151,6 +167,19 @@ if (!$formulario) {
                         $empresa_id
                     );
 
+                    if ($estado === 'enviado') {
+                        try {
+                            $db->prepare("
+                                UPDATE formulario_destinatarios fd
+                                INNER JOIN formulario_envios fe ON fe.id = fd.envio_id
+                                SET fd.respondido = 1, fd.fecha_respuesta = NOW()
+                                WHERE fe.formulario_id = ? AND fd.empresa_id = ? AND fd.respondido = 0
+                            ")->execute([$formulario_id, $empresa_id]);
+                        } catch (Exception $e) {
+                            // sin tablas de envío
+                        }
+                    }
+
                     $mensaje = $estado === 'enviado'
                         ? 'Formulario enviado correctamente.'
                         : 'Borrador guardado correctamente.';
@@ -216,6 +245,20 @@ if (!$formulario) {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <?php endif; ?>
+
+        <?php
+        if (!empty($plazo_info['limite']) && empty($error)) {
+            $ts = strtotime($plazo_info['limite'] . ' 23:59:59');
+            $dias = (int)floor(($ts - time()) / 86400);
+            if ($dias < 0) {
+                echo '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>La fecha límite para este formulario ya venció (' . e($plazo_info['limite']) . '). Contacte al ministerio si necesita una prórroga.</div>';
+            } elseif ($dias <= 3) {
+                echo '<div class="alert alert-warning"><i class="bi bi-clock me-2"></i>Fecha límite: <strong>' . e($plazo_info['limite']) . '</strong> (quedan ' . $dias . ' día(s)).</div>';
+            } else {
+                echo '<div class="alert alert-info py-2 small mb-3">Fecha límite sugerida: <strong>' . e($plazo_info['limite']) . '</strong></div>';
+            }
+        }
+        ?>
 
         <?php if (!empty($formulario) && !empty($preguntas)): ?>
         <div class="card mb-4">

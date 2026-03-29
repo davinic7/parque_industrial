@@ -19,11 +19,10 @@ class Auth {
      * Iniciar sesión
      */
     public function login($email, $password) {
-        // Verificar intentos de login
-        if ($this->isLocked($email)) {
-            return ['success' => false, 'error' => 'Cuenta bloqueada temporalmente. Intente en 15 minutos.'];
+        if ($this->isIpLockedDb()) {
+            return ['success' => false, 'error' => 'Demasiados intentos fallidos. Intente nuevamente en 15 minutos.'];
         }
-        
+
         try {
             $stmt = $this->db->prepare("
                 SELECT u.*, e.id as empresa_id, e.nombre as empresa_nombre
@@ -33,14 +32,13 @@ class Auth {
             ");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
-            
-            if (!$user || !password_verify($password, $user['password'])) {
-                $this->registerFailedAttempt($email);
+
+            if (!$user || $user['password'] === '' || !password_verify($password, $user['password'])) {
+                $this->recordFailedLoginIp($email);
                 return ['success' => false, 'error' => 'Email o contraseña incorrectos'];
             }
-            
-            // Login exitoso
-            $this->clearFailedAttempts($email);
+
+            $this->clearLoginAttemptsIp();
             $this->updateLastAccess($user['id']);
             
             // Establecer sesión
@@ -58,10 +56,35 @@ class Auth {
             log_activity('login', 'usuarios', $user['id']);
             
             return ['success' => true, 'user' => $user];
-            
+
         } catch (Exception $e) {
             error_log("Error en login: " . $e->getMessage());
             return ['success' => false, 'error' => 'Error del sistema'];
+        }
+    }
+
+    /**
+     * Registro empresa pendiente de activación (contraseña vacía hasta activar-cuenta.php).
+     */
+    public function registerEmpresaPending($email, $token, $tokenExp) {
+        try {
+            $stmt = $this->db->prepare("SELECT id FROM usuarios WHERE email = ?");
+            $stmt->execute([$email]);
+            if ($stmt->fetch()) {
+                return ['success' => false, 'error' => 'El email ya está registrado'];
+            }
+
+            $stmt = $this->db->prepare("
+                INSERT INTO usuarios (email, password, rol, activo, token_activacion, token_activacion_expira, email_verificado)
+                VALUES (?, '', 'empresa', 0, ?, ?, 0)
+            ");
+            $stmt->execute([$email, $token, $tokenExp]);
+            $user_id = (int)$this->db->lastInsertId();
+            log_activity('registro_pendiente_activacion', 'usuarios', $user_id);
+            return ['success' => true, 'user_id' => $user_id];
+        } catch (Exception $e) {
+            error_log('registerEmpresaPending: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Error al registrar usuario'];
         }
     }
     
@@ -206,31 +229,46 @@ class Auth {
      */
     public function requestPasswordReset($email) {
         try {
-            $stmt = $this->db->prepare("SELECT id FROM usuarios WHERE email = ? AND activo = 1");
+            $ip = client_ip();
+            try {
+                $c = $this->db->prepare("
+                    SELECT COUNT(*) FROM password_reset_requests
+                    WHERE ip = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+                ");
+                $c->execute([$ip]);
+                if ((int)$c->fetchColumn() >= 3) {
+                    return ['success' => true];
+                }
+                $this->db->prepare("INSERT INTO password_reset_requests (ip) VALUES (?)")->execute([$ip]);
+            } catch (Exception $e) {
+                // Tabla aún no migrada: continuar sin rate limit por IP
+            }
+
+            $stmt = $this->db->prepare("SELECT id, email FROM usuarios WHERE email = ? AND activo = 1");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
-            
+
             if (!$user) {
-                // No revelar si el email existe o no
                 return ['success' => true];
             }
-            
+
             $token = bin2hex(random_bytes(32));
             $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
-            
+
             $stmt = $this->db->prepare("
                 UPDATE usuarios SET token_recuperacion = ?, token_expira = ? WHERE id = ?
             ");
             $stmt->execute([$token, $expiry, $user['id']]);
-            
-            // TODO: Enviar email con el token
-            // mail($email, 'Recuperar contraseña', "Token: $token");
-            
+
+            $reset_link = rtrim(PUBLIC_URL, '/') . '/recuperar.php?token=' . urlencode($token);
+            if (can_send_mail()) {
+                enviar_email_recuperacion_password((string)$user['email'], $reset_link);
+            }
+
             if (defined('APP_ENV') && APP_ENV !== 'production') {
                 return ['success' => true, 'token' => $token];
             }
             return ['success' => true];
-            
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Error al procesar solicitud'];
         }
@@ -254,15 +292,23 @@ class Auth {
             
             $new_hash = password_hash($new_password, PASSWORD_DEFAULT);
             
+            $stmt = $this->db->prepare("SELECT email FROM usuarios WHERE id = ?");
+            $stmt->execute([$user['id']]);
+            $rowMail = $stmt->fetch();
+
             $stmt = $this->db->prepare("
-                UPDATE usuarios 
-                SET password = ?, token_recuperacion = NULL, token_expira = NULL 
+                UPDATE usuarios
+                SET password = ?, token_recuperacion = NULL, token_expira = NULL
                 WHERE id = ?
             ");
             $stmt->execute([$new_hash, $user['id']]);
-            
+
             log_activity('reset_password', 'usuarios', $user['id']);
-            
+
+            if ($rowMail && can_send_mail()) {
+                enviar_email_password_cambiada($rowMail['email']);
+            }
+
             return ['success' => true];
             
         } catch (Exception $e) {
@@ -290,34 +336,45 @@ class Auth {
         }
     }
     
-    // Métodos privados para manejo de intentos fallidos
-    
-    private function isLocked($email) {
-        $key = 'login_attempts_' . md5($email);
-        if (isset($_SESSION[$key])) {
-            $data = $_SESSION[$key];
-            if ($data['count'] >= LOGIN_ATTEMPTS_MAX && (time() - $data['time']) < LOGIN_LOCKOUT_TIME) {
-                return true;
-            }
-            if ((time() - $data['time']) >= LOGIN_LOCKOUT_TIME) {
-                unset($_SESSION[$key]);
-            }
+    private function isIpLockedDb(): bool {
+        $ip = client_ip();
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 1 FROM login_attempts
+                WHERE ip = ? AND bloqueado_hasta IS NOT NULL AND bloqueado_hasta > NOW()
+            ");
+            $stmt->execute([$ip]);
+            return (bool)$stmt->fetch();
+        } catch (Exception $e) {
+            return false;
         }
-        return false;
     }
-    
-    private function registerFailedAttempt($email) {
-        $key = 'login_attempts_' . md5($email);
-        if (!isset($_SESSION[$key])) {
-            $_SESSION[$key] = ['count' => 0, 'time' => time()];
+
+    private function recordFailedLoginIp(string $email): void {
+        $ip = client_ip();
+        $max = (int)LOGIN_ATTEMPTS_MAX;
+        try {
+            $this->db->prepare("
+                INSERT INTO login_attempts (ip, email, intentos, ultimo_intento)
+                VALUES (?, ?, 1, NOW())
+                ON DUPLICATE KEY UPDATE
+                    intentos = login_attempts.intentos + 1,
+                    ultimo_intento = NOW(),
+                    email = COALESCE(VALUES(email), login_attempts.email),
+                    bloqueado_hasta = IF(login_attempts.intentos + 1 >= ?, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NULL)
+            ")->execute([$ip, $email, $max]);
+        } catch (Exception $e) {
+            error_log('recordFailedLoginIp: ' . $e->getMessage());
         }
-        $_SESSION[$key]['count']++;
-        $_SESSION[$key]['time'] = time();
     }
-    
-    private function clearFailedAttempts($email) {
-        $key = 'login_attempts_' . md5($email);
-        unset($_SESSION[$key]);
+
+    private function clearLoginAttemptsIp(): void {
+        $ip = client_ip();
+        try {
+            $this->db->prepare("DELETE FROM login_attempts WHERE ip = ?")->execute([$ip]);
+        } catch (Exception $e) {
+            // ignorar
+        }
     }
     
     private function updateLastAccess($user_id) {
