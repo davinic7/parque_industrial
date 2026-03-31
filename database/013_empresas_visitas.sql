@@ -1,5 +1,5 @@
 -- Contador de visitas al perfil público (empresa.php)
--- Sin esta columna falla ministerio/exportar.php y otras consultas que usan e.visitas
+-- MySQL 5.7 y versiones sin "ADD COLUMN IF NOT EXISTS": solo ADD COLUMN.
+-- Si aparece "Duplicate column name 'visitas'", la columna ya existe: no hace falta repetir.
 
-ALTER TABLE empresas
-    ADD COLUMN IF NOT EXISTS visitas INT NOT NULL DEFAULT 0;
+ALTER TABLE empresas ADD COLUMN visitas INT NOT NULL DEFAULT 0;
