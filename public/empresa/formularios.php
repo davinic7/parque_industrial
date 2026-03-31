@@ -55,12 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'empleados_masculinos' => $emp_masc,
                         'empleados_femeninos' => $emp_fem,
                         'capacidad_instalada' => trim($_POST['capacidad_instalada'] ?? ''),
-                        'porcentaje_capacidad_uso' => !empty($_POST['porcentaje_capacidad_uso']) ? (float)$_POST['porcentaje_capacidad_uso'] : null,
+                        'porcentaje_capacidad_uso' => (isset($_POST['porcentaje_capacidad_uso']) && $_POST['porcentaje_capacidad_uso'] !== '') ? (float) $_POST['porcentaje_capacidad_uso'] : null,
                         'produccion_mensual' => trim($_POST['produccion_mensual'] ?? ''),
                         'unidad_produccion' => trim($_POST['unidad_produccion'] ?? ''),
-                        'consumo_energia' => !empty($_POST['consumo_energia']) ? (float)$_POST['consumo_energia'] : null,
-                        'consumo_agua' => !empty($_POST['consumo_agua']) ? (float)$_POST['consumo_agua'] : null,
-                        'consumo_gas' => !empty($_POST['consumo_gas']) ? (float)$_POST['consumo_gas'] : null,
+                        'consumo_energia' => (isset($_POST['consumo_energia']) && $_POST['consumo_energia'] !== '') ? (float) $_POST['consumo_energia'] : null,
+                        'consumo_agua' => (isset($_POST['consumo_agua']) && $_POST['consumo_agua'] !== '') ? (float) $_POST['consumo_agua'] : null,
+                        'consumo_gas' => (isset($_POST['consumo_gas']) && $_POST['consumo_gas'] !== '') ? (float) $_POST['consumo_gas'] : null,
                         'conexion_red_agua' => isset($_POST['conexion_red_agua']) ? 1 : 0,
                         'pozo_agua' => isset($_POST['pozo_agua']) ? 1 : 0,
                         'conexion_gas_natural' => isset($_POST['conexion_gas_natural']) ? 1 : 0,
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'importa' => isset($_POST['importa']) ? 1 : 0,
                         'productos_importa' => trim($_POST['productos_importa'] ?? ''),
                         'paises_importa' => trim($_POST['paises_importa'] ?? ''),
-                        'emisiones_co2' => !empty($_POST['emisiones_co2']) ? (float)$_POST['emisiones_co2'] : null,
+                        'emisiones_co2' => (isset($_POST['emisiones_co2']) && $_POST['emisiones_co2'] !== '') ? (float) $_POST['emisiones_co2'] : null,
                         'fuente_emision_principal' => trim($_POST['fuente_emision_principal'] ?? ''),
                         'estado' => $estado,
                         'declaracion_jurada' => isset($_POST['declaracion_jurada']) ? 1 : 0,
@@ -109,27 +109,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
 
                     if ($estado === 'enviado') {
-                        // Notificar al ministerio
-                        $nombre_empresa = $_SESSION['empresa_nombre'] ?? 'Empresa';
-                        $stmt_min = $db->query("SELECT id FROM usuarios WHERE rol IN ('ministerio', 'admin')");
-                        while ($min = $stmt_min->fetch()) {
-                            crear_notificacion(
-                                $min['id'],
-                                'formulario_enviado',
-                                'Formulario recibido',
-                                "$nombre_empresa envió su declaración trimestral ($periodo)",
-                                MINISTERIO_URL . '/formularios.php'
-                            );
-                        }
                         $mensaje = 'Formulario enviado correctamente. El Ministerio revisará sus datos.';
+                        try {
+                            $nombre_empresa = $_SESSION['empresa_nombre'] ?? 'Empresa';
+                            $stmt_min = $db->query("SELECT id FROM usuarios WHERE rol IN ('ministerio', 'admin')");
+                            while ($min = $stmt_min->fetch()) {
+                                crear_notificacion(
+                                    $min['id'],
+                                    'formulario_enviado',
+                                    'Formulario recibido',
+                                    "$nombre_empresa envió su declaración trimestral ($periodo)",
+                                    MINISTERIO_URL . '/formularios.php'
+                                );
+                            }
+                        } catch (Throwable $e) {
+                            error_log('formularios.php notificaciones ministerio: ' . $e->getMessage());
+                        }
                     } else {
                         $mensaje = 'Borrador guardado correctamente.';
                     }
                 }
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log("Error en formulario empresa_id=" . ($empresa_id ?? '') . ": " . $e->getMessage());
             $error = 'Error al procesar el formulario. Intente nuevamente.';
+            if (function_exists('env_bool') && env_bool('APP_DEBUG', false)) {
+                $error .= ' (' . $e->getMessage() . ')';
+            }
         }
     }
 }
@@ -137,20 +143,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Cargar datos existentes del periodo actual
 $stmt = $db->prepare("SELECT * FROM datos_empresa WHERE empresa_id = ? AND periodo = ?");
 $stmt->execute([$empresa_id, $periodo_actual]);
-$datos = $stmt->fetch();
+$datos = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($datos === false) {
+    $datos = [];
+}
 
 // Cargar historial de formularios enviados
-$stmt = $db->prepare("
-    SELECT periodo, estado, created_at, fecha_declaracion, observaciones_ministerio
-    FROM datos_empresa
-    WHERE empresa_id = ?
-    ORDER BY periodo DESC
-    LIMIT 8
-");
-$stmt->execute([$empresa_id]);
-$historial = $stmt->fetchAll();
+$historial = [];
+try {
+    $stmt = $db->prepare("
+        SELECT periodo, estado, created_at, fecha_declaracion, observaciones_ministerio
+        FROM datos_empresa
+        WHERE empresa_id = ?
+        ORDER BY periodo DESC
+        LIMIT 8
+    ");
+    $stmt->execute([$empresa_id]);
+    $historial = $stmt->fetchAll();
+} catch (Throwable $e) {
+    error_log('formularios.php historial: ' . $e->getMessage());
+}
 
-$formulario_bloqueado = ($datos && $datos['estado'] === 'aprobado');
+$formulario_bloqueado = (($datos['estado'] ?? '') === 'aprobado');
 ?>
 <!DOCTYPE html>
 <html lang="es">

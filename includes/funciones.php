@@ -110,13 +110,17 @@ function format_currency($number) {
  * Generar slug desde texto
  */
 function slugify($text) {
-    $text = preg_replace('~[^\pL\d]+~u', '-', $text);
-    $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+    $text = preg_replace('~[^\pL\d]+~u', '-', (string) $text);
+    $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+    if ($converted !== false) {
+        $text = $converted;
+    }
     $text = preg_replace('~[^-\w]+~', '', $text);
     $text = trim($text, '-');
     $text = preg_replace('~-+~', '-', $text);
     $text = strtolower($text);
-    return empty($text) ? 'n-a' : $text;
+    $text = substr($text, 0, 240);
+    return $text === '' ? 'n-a' : $text;
 }
 
 /**

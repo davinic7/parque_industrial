@@ -208,7 +208,7 @@ CREATE TABLE publicaciones (
     empresa_id INT NULL COMMENT 'NULL si es del ministerio',
     usuario_id INT NOT NULL,
     
-    tipo ENUM('noticia', 'evento', 'promocion', 'comunicado') DEFAULT 'noticia',
+    tipo ENUM('noticia', 'evento', 'promocion', 'comunicado', 'empleados') NOT NULL DEFAULT 'noticia',
     titulo VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
     extracto TEXT NULL,

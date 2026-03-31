@@ -39,6 +39,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
         $slug = slugify($titulo);
         $imagen = null;
 
+        $slug_base = $slug;
+        $slug_ok = false;
+        for ($i = 0; $i < 50; $i++) {
+            $slug_try = $i === 0 ? $slug_base : ($slug_base . '-' . $i);
+            if ($id > 0) {
+                $chk = $db->prepare('SELECT 1 FROM publicaciones WHERE slug = ? AND id != ? LIMIT 1');
+                $chk->execute([$slug_try, $id]);
+            } else {
+                $chk = $db->prepare('SELECT 1 FROM publicaciones WHERE slug = ? LIMIT 1');
+                $chk->execute([$slug_try]);
+            }
+            if (!$chk->fetch()) {
+                $slug = $slug_try;
+                $slug_ok = true;
+                break;
+            }
+        }
+        if (!$slug_ok) {
+            $slug = $slug_base . '-' . bin2hex(random_bytes(3));
+        }
+
         if (!empty($_FILES['imagen']['name']) && isset($_FILES['imagen']['error']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
             $resultado = upload_file($_FILES['imagen'], 'publicaciones', ALLOWED_IMAGE_TYPES);
             if ($resultado['success']) {
@@ -93,19 +114,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
             log_activity($accion === 'enviar' ? 'publicacion_enviada' : 'publicacion_guardada', 'publicaciones', $empresa_id);
 
             if ($accion === 'enviar') {
-                $nombre_empresa = $_SESSION['empresa_nombre'] ?? 'Empresa';
-                $stmt_min = $db->query("SELECT id FROM usuarios WHERE rol IN ('ministerio', 'admin')");
-                while ($min = $stmt_min->fetch()) {
-                    crear_notificacion($min['id'], 'publicacion_pendiente', 'Publicación para revisar', "$nombre_empresa envió: $titulo", MINISTERIO_URL . '/publicaciones.php');
-                }
                 set_flash('success', 'Publicación enviada para revisión');
+                try {
+                    $nombre_empresa = $_SESSION['empresa_nombre'] ?? 'Empresa';
+                    $stmt_min = $db->query("SELECT id FROM usuarios WHERE rol IN ('ministerio', 'admin')");
+                    while ($min = $stmt_min->fetch()) {
+                        crear_notificacion($min['id'], 'publicacion_pendiente', 'Publicación para revisar', "$nombre_empresa envió: $titulo", MINISTERIO_URL . '/publicaciones.php');
+                    }
+                } catch (Throwable $e) {
+                    error_log('publicaciones.php notificaciones: ' . $e->getMessage());
+                }
             } else {
                 set_flash('success', 'Borrador guardado correctamente');
             }
             redirect('publicaciones.php');
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log("Error publicación empresa_id=$empresa_id: " . $e->getMessage());
-            set_flash('error', 'Error al guardar la publicación. Vuelva a intentar.');
+            $msg = 'Error al guardar la publicación. Vuelva a intentar.';
+            if (function_exists('env_bool') && env_bool('APP_DEBUG', false)) {
+                $msg .= ' (' . $e->getMessage() . ')';
+            }
+            set_flash('error', $msg);
             redirect('publicaciones.php');
         }
     }

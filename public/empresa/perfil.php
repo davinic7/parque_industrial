@@ -64,6 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nombre = trim($_POST['nombre'] ?? '');
             $razon_social = trim($_POST['razon_social'] ?? '');
             $cuit = trim($_POST['cuit'] ?? '');
+            if ($cuit !== '' && !preg_match('/\d/', $cuit)) {
+                $cuit = '';
+            }
             $rubro = trim($_POST['rubro'] ?? '') ?: null;
             $descripcion = trim($_POST['descripcion'] ?? '');
             $ubicacion = trim($_POST['ubicacion'] ?? '');
@@ -80,6 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Validaciones
             if (empty($nombre)) {
                 $error = 'El nombre comercial es obligatorio';
+            } elseif ($rubro === null || $rubro === '') {
+                $error = 'Seleccioná un rubro';
             } elseif (!empty($cuit) && !is_valid_cuit($cuit)) {
                 $error = 'El CUIT ingresado no es válido';
             } elseif (!empty($email_contacto) && !is_valid_email($email_contacto)) {
@@ -125,6 +130,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Exception $e) {
             error_log("Error al actualizar perfil empresa_id=$empresa_id: " . $e->getMessage());
             $error = 'Error al guardar los cambios. Intente nuevamente.';
+            if (function_exists('env_bool') && env_bool('APP_DEBUG', false)) {
+                $error .= ' (' . $e->getMessage() . ')';
+            }
         }
     }
 }
@@ -277,40 +285,6 @@ try {
                         </div>
                     </div>
 
-                    <!-- Galería de imágenes (carrusel en perfil público) -->
-                    <?php if ($tabla_galeria_existe): ?>
-                    <div class="card mt-4">
-                        <div class="card-header bg-white"><h5 class="mb-0">Galería de imágenes</h5></div>
-                        <div class="card-body">
-                            <p class="text-muted small">Estas imágenes se muestran en el carrusel de tu perfil público.</p>
-                            <?php if (!empty($galeria_imagenes)): ?>
-                            <div class="row g-2 mb-3">
-                                <?php foreach ($galeria_imagenes as $img): ?>
-                                <div class="col-auto">
-                                    <div class="position-relative d-inline-block">
-                                        <img src="<?= UPLOADS_URL ?>/galeria_empresa/<?= e($img['imagen']) ?>" alt="" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
-                                        <form method="POST" class="position-absolute top-0 end-0" style="transform: translate(50%, -50%);" onsubmit="return confirm('¿Eliminar esta imagen?');">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="galeria_eliminar" value="1">
-                                            <input type="hidden" name="imagen_id" value="<?= $img['id'] ?>">
-                                            <button type="submit" class="btn btn-danger btn-sm rounded-circle p-0" style="width: 24px; height: 24px;" title="Eliminar"><i class="bi bi-x small"></i></button>
-                                        </form>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <?php endif; ?>
-                            <form method="POST" enctype="multipart/form-data" class="d-flex align-items-end gap-2">
-                                <?= csrf_field() ?>
-                                <div class="flex-grow-1">
-                                    <input type="file" name="galeria_imagen" class="form-control form-control-sm" accept="image/*" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary btn-sm">Agregar imagen</button>
-                            </form>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-
                     <!-- Contacto -->
                     <div class="card mt-4">
                         <div class="card-header bg-white"><h5 class="mb-0">Información de Contacto</h5></div>
@@ -381,6 +355,43 @@ try {
                 </div>
             </div>
         </form>
+
+        <?php if ($tabla_galeria_existe): ?>
+        <div class="row g-4 mt-0">
+            <div class="col-lg-8">
+                <div class="card mt-4">
+                    <div class="card-header bg-white"><h5 class="mb-0">Galería de imágenes</h5></div>
+                    <div class="card-body">
+                        <p class="text-muted small">Estas imágenes se muestran en el carrusel de tu perfil público.</p>
+                        <?php if (!empty($galeria_imagenes)): ?>
+                        <div class="row g-2 mb-3">
+                            <?php foreach ($galeria_imagenes as $img): ?>
+                            <div class="col-auto">
+                                <div class="position-relative d-inline-block">
+                                    <img src="<?= UPLOADS_URL ?>/galeria_empresa/<?= e($img['imagen']) ?>" alt="" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                    <form method="POST" class="position-absolute top-0 end-0" style="transform: translate(50%, -50%);" onsubmit="return confirm('¿Eliminar esta imagen?');">
+                                        <?= csrf_field() ?>
+                                        <input type="hidden" name="galeria_eliminar" value="1">
+                                        <input type="hidden" name="imagen_id" value="<?= $img['id'] ?>">
+                                        <button type="submit" class="btn btn-danger btn-sm rounded-circle p-0" style="width: 24px; height: 24px;" title="Eliminar"><i class="bi bi-x small"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                        <form method="POST" enctype="multipart/form-data" class="d-flex align-items-end gap-2 flex-wrap">
+                            <?= csrf_field() ?>
+                            <div class="flex-grow-1" style="min-width: 200px;">
+                                <input type="file" name="galeria_imagen" class="form-control form-control-sm" accept="image/*" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">Agregar imagen</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
