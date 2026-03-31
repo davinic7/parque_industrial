@@ -33,10 +33,13 @@ try {
         $stmt->execute([$empresa_id, $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null]);
     } catch (Exception $e) { /* tabla aún no creada, no es crítico */ }
     
-    // Obtener datos adicionales si existen
-    $stmt = $db->prepare("SELECT * FROM datos_empresa WHERE empresa_id = ? ORDER BY periodo DESC LIMIT 1");
-    $stmt->execute([$empresa_id]);
-    $datos = $stmt->fetch();
+    // Obtener datos adicionales si existen (tabla opcional)
+    $datos = null;
+    try {
+        $stmt = $db->prepare("SELECT * FROM datos_empresa WHERE empresa_id = ? ORDER BY periodo DESC LIMIT 1");
+        $stmt->execute([$empresa_id]);
+        $datos = $stmt->fetch();
+    } catch (Exception $e) { /* tabla aún no creada */ }
     
     // Obtener publicaciones de la empresa
     $stmt = $db->prepare("SELECT * FROM publicaciones WHERE empresa_id = ? AND estado = 'aprobado' ORDER BY created_at DESC LIMIT 10");
