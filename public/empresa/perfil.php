@@ -60,11 +60,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('dashboard.php');
             }
 
+            // El formulario de galería no envía "nombre"; no validar ni actualizar el perfil en ese caso
+            if (array_key_exists('nombre', $_POST)) {
+
             // Sanitizar inputs
             $nombre = trim($_POST['nombre'] ?? '');
             $razon_social = trim($_POST['razon_social'] ?? '');
             $cuit = trim($_POST['cuit'] ?? '');
-            if ($cuit !== '' && !preg_match('/\d/', $cuit)) {
+            $cuit_digits = cuit_digits_only($cuit);
+            if ($cuit !== '' && $cuit_digits === '') {
                 $cuit = '';
             }
             $rubro = trim($_POST['rubro'] ?? '') ?: null;
@@ -85,8 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'El nombre comercial es obligatorio';
             } elseif ($rubro === null || $rubro === '') {
                 $error = 'Seleccioná un rubro';
-            } elseif (!empty($cuit) && !is_valid_cuit($cuit)) {
-                $error = 'El CUIT ingresado no es válido';
+            } elseif ($cuit_digits !== '' && !is_valid_cuit($cuit_digits)) {
+                $error = 'El CUIT no es válido (verificá los 11 dígitos). Podés escribirlo con o sin guiones: XX-XXXXXXXX-X.';
             } elseif (!empty($email_contacto) && !is_valid_email($email_contacto)) {
                 $error = 'El email de contacto no es válido';
             } else {
@@ -102,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if (empty($error)) {
+                    $cuit_guardar = ($cuit_digits !== '') ? format_cuit_argentina($cuit_digits) : '';
                     $stmt = $db->prepare("
                         UPDATE empresas SET
                             nombre = ?, razon_social = ?, cuit = ?, rubro = ?,
@@ -112,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         WHERE id = ?
                     ");
                     $stmt->execute([
-                        $nombre, $razon_social, $cuit, $rubro,
+                        $nombre, $razon_social, $cuit_guardar, $rubro,
                         $descripcion, $ubicacion, $direccion,
                         $latitud, $longitud,
                         $telefono, $email_contacto, $contacto_nombre,
@@ -126,6 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     log_activity('perfil_actualizado', 'empresas', $empresa_id, $datos_anteriores);
                     $mensaje = 'Perfil actualizado correctamente';
                 }
+            }
             }
         } catch (Exception $e) {
             error_log("Error al actualizar perfil empresa_id=$empresa_id: " . $e->getMessage());
@@ -145,6 +151,27 @@ $empresa = $stmt->fetch();
 if (!$empresa) {
     set_flash('error', 'Empresa no encontrada');
     redirect('dashboard.php');
+}
+
+// Tras un error de validación, mantener lo que el usuario cargó (no volver todo a la BD)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '') {
+    $campos_texto = [
+        'nombre', 'razon_social', 'cuit', 'rubro', 'descripcion', 'ubicacion', 'direccion',
+        'telefono', 'email_contacto', 'contacto_nombre', 'sitio_web', 'facebook', 'instagram',
+    ];
+    foreach ($campos_texto as $c) {
+        if (array_key_exists($c, $_POST)) {
+            $empresa[$c] = is_string($_POST[$c]) ? trim($_POST[$c]) : $_POST[$c];
+        }
+    }
+    if (array_key_exists('latitud', $_POST)) {
+        $empresa['latitud'] = $_POST['latitud'] !== '' && $_POST['latitud'] !== null
+            ? $_POST['latitud'] : null;
+    }
+    if (array_key_exists('longitud', $_POST)) {
+        $empresa['longitud'] = $_POST['longitud'] !== '' && $_POST['longitud'] !== null
+            ? $_POST['longitud'] : null;
+    }
 }
 
 // Obtener rubros desde la tabla rubros
@@ -238,7 +265,8 @@ try {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">CUIT</label>
-                                    <input type="text" name="cuit" class="form-control" value="<?= e($empresa['cuit'] ?? '') ?>" placeholder="XX-XXXXXXXX-X">
+                                    <input type="text" name="cuit" id="inputCuit" class="form-control" value="<?= e($empresa['cuit'] ?? '') ?>" placeholder="20-12345678-9" inputmode="numeric" autocomplete="off" maxlength="13">
+                                    <small class="text-muted">11 dígitos; podés escribirlos solos o con guiones (se formatea al escribir). Dejalo vacío si no aplica.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Rubro *</label>
@@ -397,6 +425,27 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
     <script>
+        // CUIT: solo dígitos + guiones automáticos XX-XXXXXXXX-X
+        (function() {
+            const cuitEl = document.getElementById('inputCuit');
+            if (!cuitEl) return;
+            function formatCuitDisplay(raw) {
+                let d = String(raw).replace(/\D/g, '').slice(0, 11);
+                if (d.length <= 2) return d;
+                if (d.length <= 10) return d.slice(0, 2) + '-' + d.slice(2);
+                return d.slice(0, 2) + '-' + d.slice(2, 10) + '-' + d.slice(10);
+            }
+            cuitEl.addEventListener('input', function() {
+                const cur = this.selectionStart;
+                const before = this.value.length;
+                this.value = formatCuitDisplay(this.value);
+                const after = this.value.length;
+                try {
+                    this.setSelectionRange(cur + (after - before), cur + (after - before));
+                } catch (e) {}
+            });
+        })();
+
         // Preview de imagen
         document.querySelector('input[name="logo"]').addEventListener('change', function() {
             if (this.files[0]) {

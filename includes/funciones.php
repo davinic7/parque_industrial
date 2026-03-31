@@ -433,22 +433,45 @@ function is_valid_email($email) {
 }
 
 /**
- * Validar CUIT
+ * Solo dígitos del CUIT / CUIL (11 caracteres).
+ */
+function cuit_digits_only($cuit): string {
+    return preg_replace('/\D/', '', (string) $cuit);
+}
+
+/**
+ * Validar CUIT (acepta con o sin guiones; se normaliza a 11 dígitos).
  */
 function is_valid_cuit($cuit) {
-    $cuit = preg_replace('/[^0-9]/', '', $cuit);
-    if (strlen($cuit) !== 11) return false;
-    
+    $cuit = cuit_digits_only($cuit);
+    if (strlen($cuit) !== 11) {
+        return false;
+    }
+
     $mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
     $sum = 0;
     for ($i = 0; $i < 10; $i++) {
-        $sum += $cuit[$i] * $mult[$i];
+        $sum += (int) $cuit[$i] * $mult[$i];
     }
     $checksum = 11 - ($sum % 11);
-    if ($checksum == 11) $checksum = 0;
-    if ($checksum == 10) $checksum = 9;
-    
-    return $cuit[10] == $checksum;
+    if ($checksum == 11) {
+        $checksum = 0;
+    }
+    if ($checksum == 10) {
+        $checksum = 9;
+    }
+
+    return (int) $cuit[10] === $checksum;
+}
+
+/**
+ * Formato visual estándar XX-XXXXXXXX-X (11 dígitos válidos).
+ */
+function format_cuit_argentina(string $digits11): string {
+    if (strlen($digits11) !== 11) {
+        return $digits11;
+    }
+    return substr($digits11, 0, 2) . '-' . substr($digits11, 2, 8) . '-' . substr($digits11, 10, 1);
 }
 
 /**
