@@ -134,7 +134,7 @@ include __DIR__ . '/../includes/header.php';
             <?php foreach ($publicaciones as $pub): 
                 $img_src = '';
                 if (!empty($pub['imagen'])) {
-                    $img_src = (strpos($pub['imagen'], 'http') === 0) ? $pub['imagen'] : (UPLOADS_URL . '/publicaciones/' . $pub['imagen']);
+                    $img_src = uploads_resolve_url($pub['imagen'], 'publicaciones');
                 }
                 $num_likes = $likes_count[$pub['id']] ?? 0;
                 $ya_like = in_array($pub['id'], $likes_ya);

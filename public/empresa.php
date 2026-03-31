@@ -73,7 +73,7 @@ if (!empty($empresa['ubicacion'])) {
 }
 $custom_meta_description = truncate(trim(strip_tags(implode('. ', $meta_parts))), 158);
 if (!empty($empresa['logo'])) {
-    $custom_og_image = UPLOADS_URL . '/logos/' . $empresa['logo'];
+    $custom_og_image = uploads_resolve_url($empresa['logo'], 'logos');
 }
 
 require_once BASEPATH . '/includes/header.php';
@@ -101,7 +101,7 @@ require_once BASEPATH . '/includes/header.php';
             <div class="col-auto">
                 <div class="empresa-logo">
                     <?php if (!empty($empresa['logo'])): ?>
-                        <img src="<?= UPLOADS_URL ?>/logos/<?= e($empresa['logo']) ?>" alt="<?= e($empresa['nombre']) ?>">
+                        <img src="<?= e(uploads_resolve_url($empresa['logo'], 'logos')) ?>" alt="<?= e($empresa['nombre']) ?>">
                     <?php else: ?>
                         <i class="bi bi-building fs-1 text-primary"></i>
                     <?php endif; ?>
@@ -146,7 +146,10 @@ require_once BASEPATH . '/includes/header.php';
                     $imagenes_carrusel = [['imagen' => $empresa['imagen_portada']]];
                 }
                 if (!empty($empresa['logo']) && empty($imagenes_carrusel)) {
-                    $imagenes_carrusel = [['imagen' => 'logos/' . $empresa['logo']]];
+                    $logopath = $empresa['logo'];
+                    $imagenes_carrusel = [[
+                        'imagen' => preg_match('#^https?://#i', $logopath) ? $logopath : ('logos/' . $logopath),
+                    ]];
                 }
                 ?>
                 <?php if (!empty($imagenes_carrusel)): ?>
@@ -157,12 +160,16 @@ require_once BASEPATH . '/includes/header.php';
                             <?php foreach ($imagenes_carrusel as $idx => $img): ?>
                             <?php
                             $ruta = is_array($img) ? ($img['imagen'] ?? '') : $img;
-                            if (strpos($ruta, 'http') === 0) {
+                            if (preg_match('#^https?://#i', $ruta)) {
                                 $src = $ruta;
+                            } elseif (preg_match('#^logos/#i', $ruta)) {
+                                $src = uploads_resolve_url(substr($ruta, 6), 'logos');
+                            } elseif (preg_match('#^galeria_empresa/#i', $ruta)) {
+                                $src = uploads_resolve_url(substr($ruta, strlen('galeria_empresa/')), 'galeria_empresa');
                             } elseif (strpos($ruta, '/') !== false) {
-                                $src = UPLOADS_URL . '/' . $ruta;
+                                $src = rtrim(UPLOADS_URL, '/') . '/' . ltrim($ruta, '/');
                             } else {
-                                $src = UPLOADS_URL . '/galeria_empresa/' . $ruta;
+                                $src = uploads_resolve_url($ruta, 'galeria_empresa');
                             }
                             ?>
                             <div class="carousel-item <?= $idx === 0 ? 'active' : '' ?>">
@@ -238,7 +245,7 @@ require_once BASEPATH . '/includes/header.php';
                         <div class="col-md-6">
                             <div class="border rounded p-3 h-100">
                                 <?php if (!empty($pub['imagen'])): ?>
-                                <img src="<?= UPLOADS_URL ?>/publicaciones/<?= e($pub['imagen']) ?>" alt="" class="img-fluid rounded mb-2" style="height: 120px; width: 100%; object-fit: cover;">
+                                <img src="<?= e(uploads_resolve_url($pub['imagen'], 'publicaciones')) ?>" alt="" class="img-fluid rounded mb-2" style="height: 120px; width: 100%; object-fit: cover;">
                                 <?php endif; ?>
                                 <h6 class="mb-1"><?= e($pub['titulo']) ?></h6>
                                 <p class="small text-muted mb-2"><?= e(truncate($pub['extracto'] ?? $pub['contenido'] ?? '', 100)) ?></p>

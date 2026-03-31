@@ -30,7 +30,7 @@ $page_title = $pub['titulo'];
 
 $imagen_url = '';
 if (!empty($pub['imagen'])) {
-    $imagen_url = (strpos($pub['imagen'], 'http') === 0) ? $pub['imagen'] : (UPLOADS_URL . '/publicaciones/' . $pub['imagen']);
+    $imagen_url = uploads_resolve_url($pub['imagen'], 'publicaciones');
 }
 
 $like_count = 0;

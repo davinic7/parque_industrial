@@ -253,7 +253,7 @@ $perfil_completo = round(($completos / count($campos_perfil)) * 100);
                         <?php
                         $logo_src = '';
                         if (!empty($empresa['logo'])) {
-                            $logo_src = UPLOADS_URL . '/logos/' . $empresa['logo'];
+                            $logo_src = uploads_resolve_url($empresa['logo'], 'logos');
                         } else {
                             $logo_src = 'data:image/svg+xml,' . rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect fill="#e9ecef" width="120" height="120"/><text x="60" y="68" font-size="48" fill="#6c757d" text-anchor="middle">🏢</text></svg>');
                         }

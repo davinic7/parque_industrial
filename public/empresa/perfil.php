@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($_FILES['galeria_imagen']['name']) && $_FILES['galeria_imagen']['error'] === UPLOAD_ERR_OK) {
                 try {
                     $db->query("SELECT 1 FROM empresa_imagenes LIMIT 1");
-                    $upload = upload_file($_FILES['galeria_imagen'], 'galeria_empresa', ALLOWED_IMAGE_TYPES);
+                    $upload = upload_image_storage($_FILES['galeria_imagen'], 'galeria_empresa', ALLOWED_IMAGE_TYPES);
                     if ($upload['success']) {
                         $stmt = $db->prepare("SELECT COALESCE(MAX(orden), 0) + 1 FROM empresa_imagenes WHERE empresa_id = ?");
                         $stmt->execute([$empresa_id]);
@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Procesar logo si se subió
                 $logo_filename = $datos_anteriores['logo'];
                 if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-                    $upload = upload_file($_FILES['logo'], 'logos', ALLOWED_IMAGE_TYPES);
+                    $upload = upload_image_storage($_FILES['logo'], 'logos', ALLOWED_IMAGE_TYPES);
                     if ($upload['success']) {
                         $logo_filename = $upload['filename'];
                     } else {
@@ -320,7 +320,7 @@ try {
                                 <?php
                                 $logo_src = '';
                                 if (!empty($empresa['logo'])) {
-                                    $logo_src = UPLOADS_URL . '/logos/' . $empresa['logo'];
+                                    $logo_src = uploads_resolve_url($empresa['logo'], 'logos');
                                 } else {
                                     $logo_src = 'data:image/svg+xml,' . rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect fill="#e9ecef" width="120" height="120"/><text x="60" y="68" font-size="48" fill="#6c757d" text-anchor="middle">🏢</text></svg>');
                                 }
@@ -368,7 +368,7 @@ try {
                             <?php foreach ($galeria_imagenes as $img): ?>
                             <div class="col-auto">
                                 <div class="position-relative d-inline-block">
-                                    <img src="<?= UPLOADS_URL ?>/galeria_empresa/<?= e($img['imagen']) ?>" alt="" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                                    <img src="<?= e(uploads_resolve_url($img['imagen'], 'galeria_empresa')) ?>" alt="" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
                                     <form method="POST" class="position-absolute top-0 end-0" style="transform: translate(50%, -50%);" onsubmit="return confirm('¿Eliminar esta imagen?');">
                                         <?= csrf_field() ?>
                                         <input type="hidden" name="galeria_eliminar" value="1">

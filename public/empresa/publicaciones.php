@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
         }
 
         if (!empty($_FILES['imagen']['name']) && isset($_FILES['imagen']['error']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-            $resultado = upload_file($_FILES['imagen'], 'publicaciones', ALLOWED_IMAGE_TYPES);
+            $resultado = upload_image_storage($_FILES['imagen'], 'publicaciones', ALLOWED_IMAGE_TYPES);
             if ($resultado['success']) {
                 $imagen = $resultado['filename'];
             } else {

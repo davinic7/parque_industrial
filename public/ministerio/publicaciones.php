@@ -154,7 +154,7 @@ $publicaciones = $stmt->fetchAll();
             <div class="col-md-6">
                 <div class="card h-100">
                     <?php if ($pub['imagen']): ?>
-                    <img src="<?= UPLOADS_URL ?>/publicaciones/<?= e($pub['imagen']) ?>" class="card-img-top" style="height: 180px; object-fit: cover;" alt="">
+                    <img src="<?= e(uploads_resolve_url($pub['imagen'], 'publicaciones')) ?>" class="card-img-top" style="height: 180px; object-fit: cover;" alt="">
                     <?php endif; ?>
                     <div class="card-body">
                         <div class="d-flex justify-content-between mb-2">

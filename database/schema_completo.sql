@@ -1,19 +1,16 @@
 -- =====================================================
--- BASE DE DATOS: PARQUE INDUSTRIAL DE CATAMARCA
--- Versión: 1.0
--- Fecha: Diciembre 2025
+-- INSTALACIÓN ÚNICA — Parque Industrial (esquema + datos mínimos)
+-- Incluye: tablas de migraciones 008 (formulario_preguntas) y 010 (login, activación, envíos).
+-- Usuarios: solo admin@admin.com y test@empresa.com (contraseña: password).
+-- =====================================================
+-- Aiven / HeidiSQL: conectá a tu base (ej. defaultdb). No uses CREATE DATABASE aquí.
 -- =====================================================
 
+SET NAMES utf8mb4;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "-03:00";
-
--- Crear base de datos
-CREATE DATABASE IF NOT EXISTS parque_industrial 
-CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE parque_industrial;
 
 -- =====================================================
 -- TABLA: usuarios
@@ -28,6 +25,9 @@ CREATE TABLE usuarios (
     ultimo_acceso DATETIME NULL,
     token_recuperacion VARCHAR(255) NULL,
     token_expira DATETIME NULL,
+    token_activacion VARCHAR(64) NULL DEFAULT NULL,
+    token_activacion_expira DATETIME NULL DEFAULT NULL,
+    email_verificado TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_email (email),
@@ -424,11 +424,12 @@ CREATE TABLE respuestas_formulario (
 -- INSERTAR DATOS INICIALES
 -- =====================================================
 
--- Usuario administrador por defecto
-INSERT INTO usuarios (email, password, rol, activo) VALUES 
-('admin@parqueindustrial.gob.ar', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1),
-('ministerio@catamarca.gob.ar', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'ministerio', 1);
--- Password por defecto: password (cambiar en producción)
+-- Solo cuentas de prueba (ids 1 = admin, 2 = empresa)
+INSERT INTO usuarios (email, password, rol, activo, email_verificado) VALUES
+('admin@admin.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin', 1, 1),
+('test@empresa.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'empresa', 1, 1);
+
+INSERT INTO empresas (usuario_id, nombre, estado, perfil_completo) VALUES (2, 'Empresa de prueba', 'activa', 1);
 
 -- Rubros iniciales (basados en el Excel)
 INSERT INTO rubros (nombre, color, orden) VALUES 
@@ -474,6 +475,19 @@ INSERT INTO configuracion_sitio (clave, valor, tipo, grupo, descripcion) VALUES
 ('redes_twitter', '', 'text', 'redes', 'Twitter/X'),
 ('texto_sobre_nosotros', 'El Parque Industrial de Catamarca es un polo de desarrollo...', 'textarea', 'contenido', 'Texto sobre nosotros'),
 ('mostrar_estadisticas_publicas', '1', 'boolean', 'privacidad', 'Mostrar estadísticas al público');
+
+INSERT INTO configuracion_sitio (clave, valor, tipo, grupo, descripcion) VALUES
+('nosotros_titulo', 'Parque Industrial de Catamarca', 'text', 'nosotros', 'Título principal'),
+('nosotros_subtitulo', 'Impulsando el desarrollo productivo de la provincia', 'text', 'nosotros', 'Subtítulo'),
+('nosotros_texto', 'El Parque Industrial de Catamarca es un polo productivo estratégico que reúne a empresas de diversos rubros, brindando infraestructura, servicios y un entorno favorable para el crecimiento industrial de la provincia.\n\nGestionado por el Ministerio de Industria, Comercio y Empleo, el parque ofrece a las empresas radicadas acceso a servicios esenciales como red eléctrica, gas natural, agua potable, conectividad y seguridad.\n\nNuestra misión es promover la inversión productiva, generar empleo genuino y contribuir al desarrollo sustentable de Catamarca.', 'textarea', 'nosotros', 'Texto sobre el parque'),
+('nosotros_contacto_direccion', 'Parque Industrial de Catamarca\nSan Fernando del Valle de Catamarca\nCatamarca, Argentina', 'textarea', 'nosotros', 'Dirección'),
+('nosotros_contacto_email', 'parqueindustrial@catamarca.gob.ar', 'text', 'nosotros', 'Email de contacto'),
+('nosotros_contacto_telefono', '(0383) 4-XXXXXX', 'text', 'nosotros', 'Teléfono')
+ON DUPLICATE KEY UPDATE grupo = VALUES(grupo), descripcion = VALUES(descripcion);
+
+INSERT INTO configuracion_sitio (clave, valor, tipo, grupo, descripcion) VALUES
+('estadisticas_visibles', '["header","rubros_pie","rubros_barras","ubicacion","resumen","distribucion","info"]', 'json', 'estadisticas', 'IDs de bloques visibles en la página Estadísticas públicas')
+ON DUPLICATE KEY UPDATE descripcion = VALUES(descripcion);
 
 -- Crear vista para estadísticas rápidas
 CREATE OR REPLACE VIEW v_estadisticas_generales AS
@@ -523,11 +537,13 @@ CREATE TABLE formularios_dinamicos (
 CREATE TABLE formulario_preguntas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     formulario_id INT NOT NULL,
-    tipo ENUM('texto', 'textarea', 'numero', 'fecha', 'select', 'radio', 'checkbox', 'tabla') NOT NULL,
+    tipo ENUM('texto', 'textarea', 'numero', 'fecha', 'select', 'radio', 'checkbox', 'tabla', 'archivo', 'direccion') NOT NULL,
     etiqueta VARCHAR(255) NOT NULL,
     ayuda VARCHAR(255) NULL,
     requerido TINYINT(1) DEFAULT 0,
     opciones LONGTEXT NULL,
+    min_valor DECIMAL(15,2) NULL,
+    max_valor DECIMAL(15,2) NULL,
     orden INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_formulario (formulario_id),
@@ -604,6 +620,52 @@ CREATE TABLE IF NOT EXISTS solicitudes_proyecto (
     observaciones TEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_estado (estado)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Migración 010: login por IP, recuperación, envíos de formularios dinámicos
+CREATE TABLE login_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(45) NOT NULL,
+    email VARCHAR(255) NULL,
+    intentos INT NOT NULL DEFAULT 1,
+    ultimo_intento DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    bloqueado_hasta DATETIME NULL,
+    UNIQUE KEY uq_login_attempts_ip (ip)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE password_reset_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ip VARCHAR(45) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_ip_created (ip, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE formulario_envios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    formulario_id INT NOT NULL,
+    tipo_filtro ENUM('todos','rubro','ubicacion','estado','empresas_especificas') NOT NULL DEFAULT 'todos',
+    filtros_json TEXT NULL,
+    total_destinatarios INT NOT NULL DEFAULT 0,
+    fecha_limite DATE NULL,
+    enviado_por INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_formulario_id (formulario_id),
+    CONSTRAINT fk_fe_formulario FOREIGN KEY (formulario_id) REFERENCES formularios_dinamicos(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fe_usuario FOREIGN KEY (enviado_por) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE formulario_destinatarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    envio_id INT NOT NULL,
+    empresa_id INT NOT NULL,
+    notificado TINYINT(1) NOT NULL DEFAULT 1,
+    fecha_notificacion DATETIME NULL,
+    respondido TINYINT(1) NOT NULL DEFAULT 0,
+    fecha_respuesta DATETIME NULL,
+    plazo_hasta DATE NULL,
+    UNIQUE KEY uq_envio_empresa (envio_id, empresa_id),
+    CONSTRAINT fk_fd_envio FOREIGN KEY (envio_id) REFERENCES formulario_envios(id) ON DELETE CASCADE,
+    CONSTRAINT fk_fd_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

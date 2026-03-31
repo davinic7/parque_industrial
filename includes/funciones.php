@@ -132,6 +132,87 @@ function truncate($text, $length = 100, $suffix = '...') {
 }
 
 /**
+ * Cloudinary configurado (.env)
+ */
+function cloudinary_configured(): bool {
+    return defined('CLOUDINARY_CLOUD_NAME') && CLOUDINARY_CLOUD_NAME !== ''
+        && defined('CLOUDINARY_API_KEY') && CLOUDINARY_API_KEY !== ''
+        && defined('CLOUDINARY_API_SECRET') && CLOUDINARY_API_SECRET !== '';
+}
+
+/**
+ * Sube una imagen a Cloudinary; devuelve secure_url o null.
+ */
+function cloudinary_upload_image(string $file_path): ?string {
+    if (!cloudinary_configured() || !is_readable($file_path)) {
+        return null;
+    }
+    if (!function_exists('curl_init')) {
+        error_log('cloudinary_upload_image: extensión curl no disponible');
+        return null;
+    }
+    $cloud_name = CLOUDINARY_CLOUD_NAME;
+    $api_key = CLOUDINARY_API_KEY;
+    $api_secret = CLOUDINARY_API_SECRET;
+    $timestamp = time();
+    $signature = sha1('timestamp=' . $timestamp . $api_secret);
+    $url = 'https://api.cloudinary.com/v1_1/' . $cloud_name . '/image/upload';
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, [
+        'file' => new CURLFile($file_path),
+        'api_key' => $api_key,
+        'timestamp' => $timestamp,
+        'signature' => $signature,
+    ]);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    $result = json_decode((string) $response, true);
+    return $result['secure_url'] ?? null;
+}
+
+/**
+ * URL para mostrar imagen guardada: URL absoluta (Cloudinary) o ruta bajo uploads.
+ */
+function uploads_resolve_url(?string $stored, string $subdir): string {
+    if ($stored === null || $stored === '') {
+        return '';
+    }
+    if (preg_match('#^https?://#i', $stored)) {
+        return $stored;
+    }
+    return rtrim(UPLOADS_URL, '/') . '/' . trim($subdir, '/') . '/' . ltrim($stored, '/');
+}
+
+/**
+ * Subida de imagen: Cloudinary si está configurado; si no, disco local (upload_file).
+ * En BD se guarda la URL completa o el nombre de archivo local.
+ */
+function upload_image_storage(array $file, string $directory, ?array $allowed_types = null): array {
+    $allowed = $allowed_types ?? ALLOWED_IMAGE_TYPES;
+    if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'Error al subir el archivo'];
+    }
+    if ($file['size'] > MAX_FILE_SIZE) {
+        return ['success' => false, 'error' => 'El archivo excede el tamaño máximo'];
+    }
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime_type = $finfo->file($file['tmp_name']);
+    if (!in_array($mime_type, $allowed, true)) {
+        return ['success' => false, 'error' => 'Tipo de archivo no permitido'];
+    }
+    if (cloudinary_configured()) {
+        $url = cloudinary_upload_image($file['tmp_name']);
+        if ($url) {
+            return ['success' => true, 'filename' => $url, 'filepath' => null, 'url' => $url];
+        }
+        error_log('upload_image_storage: Cloudinary falló, usando almacenamiento local');
+    }
+    return upload_file($file, $directory, $allowed);
+}
+
+/**
  * Subir archivo
  */
 function upload_file($file, $directory = '', $allowed_types = null) {

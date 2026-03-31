@@ -18,35 +18,6 @@ try {
     $table_exists = false;
 }
 
-/**
- * Función para subir imágenes a Cloudinary
- */
-function uploadToCloudinary($file_path) {
-    $cloud_name = CLOUDINARY_CLOUD_NAME;
-    $api_key    = CLOUDINARY_API_KEY;
-    $api_secret = CLOUDINARY_API_SECRET;
-
-    $timestamp = time();
-    $signature = sha1("timestamp=$timestamp$api_secret");
-    $url = "https://api.cloudinary.com/v1_1/$cloud_name/image/upload";
-
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, [
-        'file' => new CURLFile($file_path),
-        'api_key' => $api_key,
-        'timestamp' => $timestamp,
-        'signature' => $signature
-    ]);
-
-    $response = curl_exec($ch);
-    $result = json_decode($response, true);
-    curl_close($ch);
-
-    return $result['secure_url'] ?? null;
-}
-
 // Procesar acciones
 if ($table_exists && $_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
     $accion = $_POST['accion'] ?? '';
@@ -66,7 +37,7 @@ if ($table_exists && $_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST
 
         $imagen_url = null;
         if (!empty($_FILES['imagen']['name']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-            $imagen_url = uploadToCloudinary($_FILES['imagen']['tmp_name']);
+            $imagen_url = cloudinary_upload_image($_FILES['imagen']['tmp_name']);
         }
 
         if ($id > 0) {

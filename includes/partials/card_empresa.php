@@ -26,7 +26,7 @@ $rubro_ok = ($rubro !== null && $rubro !== '');
     <div class="empresa-card h-100 d-flex flex-column">
         <div class="card-img">
             <?php if (!empty($logo) && defined('UPLOADS_URL')): ?>
-                <img src="<?= UPLOADS_URL ?>/logos/<?= e($logo) ?>" alt="<?= e($nombre) ?>">
+                <img src="<?= e(uploads_resolve_url($logo, 'logos')) ?>" alt="<?= e($nombre) ?>">
             <?php else: ?>
                 <i class="bi bi-building placeholder-icon" style="font-size: 4rem; color: #ccc;" aria-hidden="true"></i>
             <?php endif; ?>

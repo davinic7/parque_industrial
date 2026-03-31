@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Logo
     $logo = $empresa['logo'];
     if (!empty($_FILES['logo']['name'])) {
-        $resultado = upload_file($_FILES['logo'], 'logos', ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
+        $resultado = upload_image_storage($_FILES['logo'], 'logos', ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
         if ($resultado['success']) {
             $logo = $resultado['filename'];
         } else {
