@@ -105,6 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
                 $stmt = $db->prepare($sql);
                 $stmt->execute($params);
             } else {
+                if (!db_column_is_auto_increment($db, 'publicaciones', 'id')) {
+                    set_flash('error', 'La base de datos debe corregirse: la tabla publicaciones no tiene la columna id con AUTO_INCREMENT. Ejecutá en MySQL el script database/014_publicaciones_id_autoincrement.sql (comando ALTER del archivo).');
+                    redirect('publicaciones.php?nueva=1');
+                }
                 $sql = "INSERT INTO publicaciones (empresa_id, usuario_id, titulo, slug, tipo, extracto, contenido, imagen, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $db->prepare($sql);
                 $stmt->execute([$empresa_id, $usuario_id, $titulo, $slug, $tipo, $extracto, $contenido, $imagen, $estado]);
@@ -131,11 +135,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
         } catch (Throwable $e) {
             error_log("Error publicación empresa_id=$empresa_id: " . $e->getMessage());
             $msg = 'Error al guardar la publicación. Vuelva a intentar.';
-            if (function_exists('env_bool') && env_bool('APP_DEBUG', false)) {
-                $msg .= ' (' . $e->getMessage() . ')';
+            $detail = $e->getMessage();
+            if (strpos($detail, '1364') !== false && stripos($detail, 'id') !== false) {
+                $msg = 'La tabla publicaciones en el servidor no tiene id AUTO_INCREMENT. Ejecutá en MySQL: database/014_publicaciones_id_autoincrement.sql';
+            } elseif (function_exists('env_bool') && env_bool('APP_DEBUG', false)) {
+                $msg .= ' (' . $detail . ')';
             }
             set_flash('error', $msg);
-            redirect('publicaciones.php');
+            redirect('publicaciones.php' . ($id > 0 ? '?editar=' . (int) $id : '?nueva=1'));
         }
     }
 

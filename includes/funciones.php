@@ -195,6 +195,28 @@ function get_config($key, $default = null) {
 }
 
 /**
+ * Indica si una columna tiene AUTO_INCREMENT (SHOW COLUMNS).
+ * Tabla y columna: solo letras, números y guión bajo.
+ */
+function db_column_is_auto_increment(PDO $db, string $table, string $column = 'id'): bool {
+    $t = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    $c = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+    if ($t === '' || $c === '') {
+        return true;
+    }
+    try {
+        $stmt = $db->query("SHOW COLUMNS FROM `{$t}` WHERE Field = '{$c}'");
+        $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : false;
+        if (!$row) {
+            return true;
+        }
+        return stripos((string) ($row['Extra'] ?? ''), 'auto_increment') !== false;
+    } catch (Throwable $e) {
+        return true;
+    }
+}
+
+/**
  * Registrar actividad
  */
 function log_activity($accion, $tabla = null, $registro_id = null, $datos_anteriores = null, $datos_nuevos = null) {
