@@ -14,9 +14,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
     $exportar = $_POST['exportar'] ?? '';
 
     if ($exportar === 'empresas') {
+        $visitasExpr = '0 AS visitas';
+        try {
+            $col = $db->query("SHOW COLUMNS FROM empresas WHERE Field = 'visitas'");
+            if ($col && $col->fetch(PDO::FETCH_ASSOC)) {
+                $visitasExpr = 'COALESCE(e.visitas, 0) AS visitas';
+            }
+        } catch (Throwable $e) {
+            /* exportar sin columna visitas */
+        }
         $stmt = $db->query("
             SELECT e.nombre, e.razon_social, e.cuit, e.rubro, e.estado, e.ubicacion, e.direccion,
-                   e.telefono, e.email_contacto, e.contacto_nombre, e.sitio_web, COALESCE(e.visitas, 0) AS visitas, e.created_at
+                   e.telefono, e.email_contacto, e.contacto_nombre, e.sitio_web, $visitasExpr, e.created_at
             FROM empresas e ORDER BY e.nombre
         ");
         $datos = $stmt->fetchAll(PDO::FETCH_ASSOC);
