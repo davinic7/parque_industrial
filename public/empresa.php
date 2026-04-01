@@ -80,43 +80,107 @@ require_once BASEPATH . '/includes/header.php';
 ?>
 
 <style>
-.empresa-header { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; padding: 40px 0; }
-.empresa-logo { width: 120px; height: 120px; background: #fff; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-.empresa-logo img { max-width: 100px; max-height: 100px; }
-.info-card { background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); height: 100%; }
-.info-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #eee; }
+/* Hero más compacto; sin columnas forzadas a la misma altura */
+.empresa-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+    padding: 1.25rem 0 1.5rem;
+}
+@media (min-width: 768px) {
+    .empresa-header { padding: 1.5rem 0 1.75rem; }
+}
+.empresa-header .empresa-title { font-size: clamp(1.35rem, 2.5vw, 1.75rem); font-weight: 700; margin-bottom: 0.25rem; }
+.empresa-header .empresa-sub { font-size: 0.9rem; opacity: 0.9; }
+.empresa-logo {
+    width: 88px;
+    height: 88px;
+    background: #fff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+    flex-shrink: 0;
+}
+@media (min-width: 768px) {
+    .empresa-logo { width: 96px; height: 96px; border-radius: 12px; }
+}
+.empresa-logo img { max-width: 80px; max-height: 80px; object-fit: contain; }
+/* Tarjetas: altura al contenido (evita bloques enormes vacíos) */
+.empresa-public .info-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.15rem 1.25rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+    height: auto;
+    min-height: 0;
+}
+@media (min-width: 768px) {
+    .empresa-public .info-card { padding: 1.25rem 1.5rem; }
+}
+.empresa-public .info-card h4,
+.empresa-public .info-card .h4-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+.empresa-descripcion-body {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    max-width: 48rem;
+    margin-bottom: 0;
+}
+.empresa-sidebar-sticky {
+    position: sticky;
+    top: 5.5rem;
+}
+@media (max-width: 991.98px) {
+    .empresa-sidebar-sticky { position: static; }
+}
+.info-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
 .info-item:last-child { border-bottom: none; }
-.info-item i { color: var(--primary); font-size: 1.2rem; width: 24px; }
-.info-item .label { font-size: 0.85rem; color: #666; }
-.info-item .value { font-weight: 500; }
+.info-item i { color: var(--primary); font-size: 1.1rem; width: 22px; flex-shrink: 0; margin-top: 2px; }
+.info-item .label { font-size: 0.8rem; color: #666; }
+.info-item .value { font-weight: 500; font-size: 0.95rem; word-break: break-word; }
 .stat-mini { text-align: center; padding: 15px; background: var(--gray-100); border-radius: 8px; }
 .stat-mini .number { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
 .stat-mini .label { font-size: 0.75rem; color: #666; }
+.empresa-public .section-map { height: 220px; border-radius: 8px; }
+@media (min-width: 768px) {
+    .empresa-public .section-map { height: 260px; }
+}
+.empresa-public .carousel-item img { max-height: min(52vw, 320px); object-fit: cover; }
+/* Menos aire vertical que .section genérica (50px) */
+section.empresa-public.section { padding-top: 1.25rem; padding-bottom: 2.25rem; }
+@media (min-width: 992px) {
+    section.empresa-public.section { padding-top: 1.5rem; padding-bottom: 2.5rem; }
+}
 </style>
 
 <!-- Header de Empresa -->
 <div class="empresa-header">
     <div class="container">
-        <div class="row align-items-center">
+        <div class="row align-items-center g-3">
             <div class="col-auto">
                 <div class="empresa-logo">
                     <?php if (!empty($empresa['logo'])): ?>
                         <img src="<?= e(uploads_resolve_url($empresa['logo'], 'logos')) ?>" alt="<?= e($empresa['nombre']) ?>">
                     <?php else: ?>
-                        <i class="bi bi-building fs-1 text-primary"></i>
+                        <i class="bi bi-building fs-2 text-primary"></i>
                     <?php endif; ?>
                 </div>
             </div>
-            <div class="col">
-                <span class="badge bg-light text-primary mb-2"><?= e($empresa['rubro'] ?? 'Sin rubro') ?></span>
-                <h1 class="h2 mb-1"><?= e($empresa['nombre']) ?></h1>
+            <div class="col min-w-0">
+                <span class="badge bg-light text-primary mb-1"><?= e($empresa['rubro'] ?? 'Sin rubro') ?></span>
+                <h1 class="empresa-title"><?= e($empresa['nombre']) ?></h1>
                 <?php if (!empty($empresa['razon_social'])): ?>
-                <p class="opacity-75 mb-2"><?= e($empresa['razon_social']) ?></p>
+                <p class="empresa-sub mb-1"><?= e($empresa['razon_social']) ?></p>
                 <?php endif; ?>
-                <p class="mb-0"><i class="bi bi-geo-alt me-1"></i><?= e($empresa['ubicacion'] ?? 'Sin ubicación') ?></p>
+                <p class="mb-0 small opacity-90"><i class="bi bi-geo-alt me-1"></i><?= e($empresa['ubicacion'] ?? 'Sin ubicación') ?></p>
             </div>
-            <div class="col-auto">
-                <a href="<?= PUBLIC_URL ?>/empresas.php" class="btn btn-outline-light">
+            <div class="col-12 col-sm-auto ms-sm-auto">
+                <a href="<?= PUBLIC_URL ?>/empresas.php" class="btn btn-outline-light btn-sm px-3">
                     <i class="bi bi-arrow-left me-1"></i>Volver
                 </a>
             </div>
@@ -124,18 +188,18 @@ require_once BASEPATH . '/includes/header.php';
     </div>
 </div>
 
-<section class="section">
+<section class="section empresa-public">
     <div class="container">
-        <div class="row g-4">
+        <div class="row g-4 align-items-start">
             <!-- Información principal -->
             <div class="col-lg-8">
                 <!-- Descripción -->
-                <div class="info-card mb-4">
-                    <h4 class="mb-3"><i class="bi bi-info-circle text-primary me-2"></i>Sobre la Empresa</h4>
+                <div class="info-card mb-3 mb-lg-4">
+                    <h4 class="h4-title"><i class="bi bi-info-circle text-primary me-2"></i>Sobre la Empresa</h4>
                     <?php if (!empty($empresa['descripcion'])): ?>
-                        <p><?= nl2br(e($empresa['descripcion'])) ?></p>
+                        <p class="empresa-descripcion-body"><?= nl2br(e($empresa['descripcion'])) ?></p>
                     <?php else: ?>
-                        <p class="text-muted">Esta empresa aún no ha agregado una descripción.</p>
+                        <p class="text-muted mb-0 small">Esta empresa aún no ha agregado una descripción.</p>
                     <?php endif; ?>
                 </div>
                 
@@ -153,8 +217,8 @@ require_once BASEPATH . '/includes/header.php';
                 }
                 ?>
                 <?php if (!empty($imagenes_carrusel)): ?>
-                <div class="info-card mb-4">
-                    <h4 class="mb-3"><i class="bi bi-images text-primary me-2"></i>Galería</h4>
+                <div class="info-card mb-3 mb-lg-4">
+                    <h4 class="h4-title"><i class="bi bi-images text-primary me-2"></i>Galería</h4>
                     <div id="galeriaEmpresa" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
                         <div class="carousel-inner rounded overflow-hidden">
                             <?php foreach ($imagenes_carrusel as $idx => $img): ?>
@@ -173,7 +237,7 @@ require_once BASEPATH . '/includes/header.php';
                             }
                             ?>
                             <div class="carousel-item <?= $idx === 0 ? 'active' : '' ?>">
-                                <img src="<?= e($src) ?>" class="d-block w-100" style="max-height: 400px; object-fit: cover;" alt="Imagen <?= $idx + 1 ?>">
+                                <img src="<?= e($src) ?>" class="d-block w-100" alt="Imagen <?= $idx + 1 ?>">
                             </div>
                             <?php endforeach; ?>
                         </div>
@@ -191,8 +255,8 @@ require_once BASEPATH . '/includes/header.php';
                 
                 <!-- Datos de producción si existen -->
                 <?php if ($datos): ?>
-                <div class="info-card mb-4">
-                    <h4 class="mb-3"><i class="bi bi-graph-up text-primary me-2"></i>Datos de Producción</h4>
+                <div class="info-card mb-3 mb-lg-4">
+                    <h4 class="h4-title"><i class="bi bi-graph-up text-primary me-2"></i>Datos de Producción</h4>
                     <div class="row g-3">
                         <?php if ($datos['dotacion_total']): ?>
                         <div class="col-md-3">
@@ -231,15 +295,15 @@ require_once BASEPATH . '/includes/header.php';
                 <?php endif; ?>
                 
                 <!-- Ubicación en mapa -->
-                <div class="info-card mb-4">
-                    <h4 class="mb-3"><i class="bi bi-geo-alt text-primary me-2"></i>Ubicación</h4>
-                    <div id="empresaMap" style="height: 300px; border-radius: 8px;"></div>
+                <div class="info-card mb-3 mb-lg-4">
+                    <h4 class="h4-title"><i class="bi bi-geo-alt text-primary me-2"></i>Ubicación</h4>
+                    <div id="empresaMap" class="section-map w-100"></div>
                 </div>
                 
                 <!-- Noticias de la empresa -->
                 <?php if (!empty($publicaciones)): ?>
-                <div class="info-card">
-                    <h4 class="mb-3"><i class="bi bi-newspaper text-primary me-2"></i>Noticias</h4>
+                <div class="info-card mb-0">
+                    <h4 class="h4-title"><i class="bi bi-newspaper text-primary me-2"></i>Noticias</h4>
                     <div class="row g-3">
                         <?php foreach ($publicaciones as $pub): ?>
                         <div class="col-md-6">
@@ -263,9 +327,10 @@ require_once BASEPATH . '/includes/header.php';
             
             <!-- Sidebar -->
             <div class="col-lg-4">
+                <div class="empresa-sidebar-sticky d-flex flex-column gap-3">
                 <!-- Contacto -->
-                <div class="info-card mb-4">
-                    <h4 class="mb-3"><i class="bi bi-telephone text-primary me-2"></i>Contacto</h4>
+                <div class="info-card mb-0">
+                    <h4 class="h4-title"><i class="bi bi-telephone text-primary me-2"></i>Contacto</h4>
                     
                     <?php if (!empty($empresa['contacto_nombre'])): ?>
                     <div class="info-item">
@@ -325,8 +390,8 @@ require_once BASEPATH . '/includes/header.php';
                 </div>
                 
                 <!-- Datos adicionales -->
-                <div class="info-card mb-4">
-                    <h4 class="mb-3"><i class="bi bi-card-list text-primary me-2"></i>Información</h4>
+                <div class="info-card mb-0">
+                    <h4 class="h4-title"><i class="bi bi-card-list text-primary me-2"></i>Información</h4>
                     
                     <?php if (!empty($empresa['cuit'])): ?>
                     <div class="info-item">
@@ -357,8 +422,8 @@ require_once BASEPATH . '/includes/header.php';
                 
                 <!-- Redes sociales -->
                 <?php if (!empty($empresa['facebook']) || !empty($empresa['instagram']) || !empty($empresa['linkedin'])): ?>
-                <div class="info-card">
-                    <h4 class="mb-3"><i class="bi bi-share text-primary me-2"></i>Redes Sociales</h4>
+                <div class="info-card mb-0">
+                    <h4 class="h4-title"><i class="bi bi-share text-primary me-2"></i>Redes Sociales</h4>
                     <div class="d-flex gap-3">
                         <?php if (!empty($empresa['facebook'])): ?>
                         <a href="<?= e($empresa['facebook']) ?>" target="_blank" class="btn btn-outline-primary">
@@ -378,6 +443,7 @@ require_once BASEPATH . '/includes/header.php';
                     </div>
                 </div>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
