@@ -151,7 +151,7 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
             <div class="section-divider"></div>
         </div>
         
-        <div class="row g-4">
+        <div class="row g-4 justify-content-center empresa-destacadas-row">
             <?php if (empty($empresas_destacadas)): ?>
                 <?php
                 $ejemplos = [
@@ -226,29 +226,29 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
 
 <?php
 $rubros_json = json_encode(array_slice($rubros, 0, 10));
-$extra_js = <<<JS
+$extra_js = '<script src="' . PUBLIC_URL . '/js/parque-leaflet.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var rubrosData = $rubros_json;
-    var labels = rubrosData.length > 0 ? rubrosData.map(function(r) { return r.nombre; }) : ['Textil', 'Construcción', 'Metalúrgica', 'Alimentos', 'Transporte', 'Reciclado', 'Hormigón', 'Otros'];
+document.addEventListener("DOMContentLoaded", function() {
+    var rubrosData = ' . $rubros_json . ';
+    var labels = rubrosData.length > 0 ? rubrosData.map(function(r) { return r.nombre; }) : ["Textil", "Construcción", "Metalúrgica", "Alimentos", "Transporte", "Reciclado", "Hormigón", "Otros"];
     var data = rubrosData.length > 0 ? rubrosData.map(function(r) { return r.total_empresas; }) : [14, 11, 5, 5, 5, 4, 3, 31];
-    var colors = ['#3498db', '#e74c3c', '#95a5a6', '#27ae60', '#f39c12', '#2ecc71', '#7f8c8d', '#9b59b6', '#1abc9c', '#e67e22'];
-    if (document.getElementById('chartRubros') && typeof Chart !== 'undefined') {
-        new Chart(document.getElementById('chartRubros'), {
-            type: 'doughnut',
-            data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { padding: 15, usePointStyle: true } } } }
+    var colors = ["#3498db", "#e74c3c", "#95a5a6", "#27ae60", "#f39c12", "#2ecc71", "#7f8c8d", "#9b59b6", "#1abc9c", "#e67e22"];
+    if (document.getElementById("chartRubros") && typeof Chart !== "undefined") {
+        new Chart(document.getElementById("chartRubros"), {
+            type: "doughnut",
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: "#fff" }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { padding: 15, usePointStyle: true } } } }
         });
     }
-    if (typeof L !== 'undefined' && document.getElementById('mapaParquePolygono')) {
+    if (typeof L !== "undefined" && typeof ParqueLeaflet !== "undefined" && document.getElementById("mapaParquePolygono")) {
         var centroParque = [-28.4696, -65.7795];
-        var mapParque = L.map('mapaParquePolygono').setView(centroParque, 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapParque);
-        L.marker(centroParque).addTo(mapParque).bindPopup('<strong>Parque Industrial El Pantanillo</strong><br>Catamarca, Argentina');
+        var mapParque = L.map("mapaParquePolygono", { zoomControl: false }).setView(centroParque, 15);
+        ParqueLeaflet.addSatelliteLayer(mapParque);
+        ParqueLeaflet.freezeMap(mapParque);
+        L.marker(centroParque).addTo(mapParque).bindPopup("<strong>Parque Industrial El Pantanillo</strong><br>Catamarca, Argentina");
         setTimeout(function() { mapParque.invalidateSize(); }, 300);
     }
 });
-</script>
-JS;
+</script>';
 require_once BASEPATH . '/includes/footer.php';
 ?>

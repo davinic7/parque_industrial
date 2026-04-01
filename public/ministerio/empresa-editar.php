@@ -39,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre = trim($_POST['nombre'] ?? '');
     $razon_social = trim($_POST['razon_social'] ?? '');
     $cuit = trim($_POST['cuit'] ?? '');
+    $cuit_digits = cuit_digits_only($cuit);
     $rubro = trim($_POST['rubro'] ?? '');
     $descripcion = trim($_POST['descripcion'] ?? '');
     $ubicacion = trim($_POST['ubicacion'] ?? '');
@@ -58,10 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("empresa-editar.php?id=$emp_id");
     }
 
-    if ($cuit && !is_valid_cuit($cuit)) {
-        set_flash('error', 'CUIT inválido');
+    if ($cuit_digits !== '' && !is_valid_cuit($cuit_digits)) {
+        set_flash('error', 'CUIT inválido: deben ser 11 dígitos con verificador correcto (como en el panel empresa).');
         redirect("empresa-editar.php?id=$emp_id");
     }
+    $cuit_guardar = ($cuit_digits !== '') ? format_cuit_argentina($cuit_digits) : '';
 
     if (!in_array($estado, ['pendiente', 'activa', 'suspendida', 'inactiva'])) {
         $estado = $empresa['estado'];
@@ -70,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Logo
     $logo = $empresa['logo'];
     if (!empty($_FILES['logo']['name'])) {
-        $resultado = upload_image_storage($_FILES['logo'], 'logos', ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
+        $allowed_logo = array_values(array_unique(array_merge(ALLOWED_IMAGE_TYPES, ['image/svg+xml'])));
+        $resultado = upload_image_storage($_FILES['logo'], 'logos', $allowed_logo);
         if ($resultado['success']) {
             $logo = $resultado['filename'];
         } else {
@@ -87,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE id = ?
         ");
         $stmt->execute([
-            $nombre, $razon_social, $cuit, $rubro, $descripcion,
+            $nombre, $razon_social, $cuit_guardar, $rubro, $descripcion,
             $ubicacion, $direccion, $latitud, $longitud, $telefono, $email_contacto,
             $contacto_nombre, $sitio_web, $facebook, $instagram, $logo, $estado,
             $emp_id
@@ -172,7 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <textarea name="descripcion" class="form-control" rows="3"><?= e($empresa['descripcion'] ?? '') ?></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Logo (JPG, PNG, WebP, SVG)</label>
+                            <?php $logo_max_mb = max(1, (int) ceil(MAX_FILE_SIZE / 1048576)); ?>
+                            <label class="form-label">Logo (JPG, PNG, GIF, WebP, SVG — máx. <?= (int) $logo_max_mb ?> MB)</label>
                             <input type="file" name="logo" class="form-control" accept="image/*">
                             <?php if ($empresa['logo']): ?>
                             <small class="text-muted">Actual: <?= e($empresa['logo']) ?></small>
@@ -248,13 +252,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
     <script>
         const lat = <?= (float)($empresa['latitud'] ?: MAP_DEFAULT_LAT) ?>;
         const lng = <?= (float)($empresa['longitud'] ?: MAP_DEFAULT_LNG) ?>;
         const zoom = <?= ($empresa['latitud'] && $empresa['longitud']) ? 15 : 13 ?>;
 
         const map = L.map('mapEditar').setView([lat, lng], zoom);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        ParqueLeaflet.addSatelliteLayer(map);
 
         let marker = L.marker([lat, lng], {draggable: true}).addTo(map);
 

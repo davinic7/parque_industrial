@@ -25,6 +25,7 @@ $mnA = static function (string $key) use ($ministerio_nav): string {
             <a href="formularios.php"<?= $mnA('formularios') ?>><i class="bi bi-file-earmark-text"></i> Formularios de datos</a>
             <a href="formularios-dinamicos.php"<?= $mnA('formularios_dinamicos') ?>><i class="bi bi-ui-checks"></i> Formularios dinámicos</a>
             <a href="comunicados.php"<?= $mnA('comunicados') ?>><i class="bi bi-send"></i> Comunicados a empresas</a>
+            <a href="mensajes-entrada.php"<?= $mnA('mensajes_entrada') ?>><i class="bi bi-inbox-fill"></i> Mensajes de empresas</a>
             <a href="solicitudes-proyecto.php"<?= $mnA('solicitudes') ?>><i class="bi bi-inbox"></i> Solicitudes proyecto<?php if ($ministerio_badge_solicitudes > 0): ?> <span class="badge bg-danger"><?= $ministerio_badge_solicitudes ?></span><?php endif; ?></a>
             <a href="graficos.php"<?= $mnA('graficos') ?>><i class="bi bi-graph-up"></i> Gráficos y datos</a>
             <a href="exportar.php"<?= $mnA('exportar') ?>><i class="bi bi-download"></i> Exportar datos</a>

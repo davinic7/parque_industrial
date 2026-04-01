@@ -192,6 +192,7 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
     <script>
         const rubrosLabels = <?= json_encode($rubros_labels, JSON_UNESCAPED_UNICODE) ?>;
         const rubrosValues = <?= json_encode($rubros_values) ?>;
@@ -261,9 +262,7 @@ try {
 
         // Mapa de calor simple con círculos ponderados
         const map = L.map('heatMap').setView([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19
-        }).addTo(map);
+        ParqueLeaflet.addSatelliteLayer(map);
 
         if (heatPoints && heatPoints.length) {
             heatPoints.forEach(function(p) {

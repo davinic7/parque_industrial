@@ -170,6 +170,7 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
     <script>
         new Chart(document.getElementById('chartRubros'), {
@@ -180,8 +181,9 @@ try {
             },
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
-        const map = L.map('miniMap').setView([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        const map = L.map('miniMap', { zoomControl: false }).setView([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>], 13);
+        ParqueLeaflet.addSatelliteLayer(map);
+        ParqueLeaflet.freezeMap(map);
         L.marker([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>]).addTo(map).bindPopup('Parque Industrial');
     </script>
 </body>

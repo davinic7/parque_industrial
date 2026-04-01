@@ -1,0 +1,496 @@
+/**
+ * Layout panel empresa: sidebar reducido + topbar + main
+ * Paleta: azul institucional, mucho whitespace, sombras suaves
+ */
+:root {
+    --ea-primary: #1a5276;
+    --ea-primary-dark: #0e3a52;
+    --ea-surface: #f4f7fb;
+    --ea-card-shadow: 0 4px 24px rgba(14, 58, 82, 0.08);
+    --ea-card-shadow-hover: 0 8px 32px rgba(14, 58, 82, 0.12);
+    --ea-sidebar-w: 228px;
+    --ea-topbar-h: 58px;
+}
+
+body.empresa-app-body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--ea-surface);
+    font-family: 'Roboto', system-ui, sans-serif;
+}
+
+.empresa-app-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(14, 58, 82, 0.45);
+    z-index: 1030;
+    backdrop-filter: blur(2px);
+}
+
+body.empresa-sidebar-open .empresa-app-backdrop {
+    display: block;
+}
+
+.empresa-app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ——— Sidebar ——— */
+.empresa-sidebar {
+    width: var(--ea-sidebar-w);
+    flex-shrink: 0;
+    background: linear-gradient(180deg, var(--ea-primary-dark) 0%, #0f2d40 100%);
+    display: flex;
+    flex-direction: column;
+    z-index: 1040;
+    box-shadow: 4px 0 24px rgba(14, 58, 82, 0.12);
+}
+
+.empresa-sidebar-brand {
+    padding: 1.35rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.empresa-sidebar-brand-link {
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+}
+
+.empresa-sidebar-brand-link:hover {
+    color: #fff;
+    opacity: 0.92;
+}
+
+.empresa-sidebar-brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+}
+
+.empresa-sidebar-brand-title {
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+    line-height: 1.25;
+}
+
+.empresa-sidebar-brand-link small {
+    font-size: 0.65rem;
+    font-weight: 500;
+    opacity: 0.55;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.empresa-sidebar-nav {
+    padding: 1.25rem 0;
+    flex: 1;
+}
+
+.empresa-sidebar-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.25rem;
+    color: rgba(255, 255, 255, 0.78);
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.empresa-sidebar-nav a:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
+.empresa-sidebar-nav a.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-left-color: #27ae60;
+}
+
+.empresa-sidebar-nav a i {
+    width: 1.25rem;
+    text-align: center;
+    opacity: 0.9;
+}
+
+.empresa-sidebar-footer {
+    padding: 1rem 1.25rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.empresa-sidebar-footer a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.8rem;
+    text-decoration: none;
+}
+
+.empresa-sidebar-footer a:hover {
+    color: #fff;
+}
+
+/* ——— Columna principal ——— */
+.empresa-app-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ——— Topbar ——— */
+.empresa-topbar {
+    height: var(--ea-topbar-h);
+    min-height: var(--ea-topbar-h);
+    flex-shrink: 0;
+    background: #fff;
+    box-shadow: 0 1px 0 rgba(14, 58, 82, 0.06), 0 4px 20px rgba(14, 58, 82, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.25rem 0 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.empresa-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.empresa-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: none;
+    background: var(--ea-surface);
+    color: var(--ea-primary);
+    border-radius: 10px;
+    font-size: 1.1rem;
+}
+
+.empresa-topbar-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ea-primary-dark);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.empresa-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.empresa-icon-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.65rem;
+    height: 2.65rem;
+    border-radius: 12px;
+    color: var(--ea-primary);
+    background: transparent;
+    border: none;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.empresa-icon-btn:hover {
+    background: var(--ea-surface);
+    color: var(--ea-primary-dark);
+}
+
+.empresa-icon-btn .badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 0.65rem;
+    padding: 0.2em 0.45em;
+}
+
+.empresa-user-dd .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 12px;
+    border: 1px solid rgba(14, 58, 82, 0.1);
+    background: #fff;
+    color: var(--ea-primary-dark);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.empresa-user-dd .dropdown-toggle::after {
+    margin-left: 0.25rem;
+}
+
+.empresa-user-dd .dropdown-menu {
+    box-shadow: var(--ea-card-shadow);
+    border: none;
+    border-radius: 12px;
+    padding: 0.5rem;
+    min-width: 220px;
+}
+
+.empresa-user-dd .dropdown-item {
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+}
+
+.empresa-user-dd .dropdown-item i {
+    width: 1.25rem;
+    opacity: 0.75;
+}
+
+/* ——— Main ——— */
+.empresa-main {
+    flex: 1;
+    padding: 2rem 1.75rem 2.5rem;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+@media (min-width: 1200px) {
+    .empresa-main {
+        padding: 2.25rem 2.5rem 3rem;
+    }
+}
+
+/* Tarjetas dashboard / utilidades */
+.empresa-card-soft {
+    background: #fff;
+    border: none;
+    border-radius: 16px;
+    box-shadow: var(--ea-card-shadow);
+    overflow: hidden;
+}
+
+.empresa-card-soft .card-header {
+    background: transparent;
+    border-bottom: 1px solid rgba(14, 58, 82, 0.06);
+    padding: 1.1rem 1.35rem;
+    font-weight: 600;
+    color: var(--ea-primary-dark);
+}
+
+.empresa-card-soft .card-body {
+    padding: 1.35rem;
+}
+
+/* Acciones rápidas: cards sólidas */
+.empresa-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    min-height: 132px;
+    padding: 1.25rem 1.35rem;
+    border-radius: 16px;
+    text-decoration: none;
+    color: #fff !important;
+    box-shadow: var(--ea-card-shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+}
+
+.empresa-action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--ea-card-shadow-hover);
+    color: #fff !important;
+}
+
+.empresa-action-card i {
+    font-size: 1.75rem;
+    opacity: 0.95;
+    margin-bottom: 0.75rem;
+}
+
+.empresa-action-card .label {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.empresa-action-card .hint {
+    font-size: 0.75rem;
+    opacity: 0.88;
+    margin-top: 0.25rem;
+}
+
+.empresa-action-card--primary {
+    background: linear-gradient(135deg, var(--ea-primary) 0%, var(--ea-primary-dark) 100%);
+}
+.empresa-action-card--success {
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+}
+.empresa-action-card--amber {
+    background: linear-gradient(135deg, #e67e22 0%, #c87f0a 100%);
+}
+
+/* KPI compactos consumos / producción */
+.empresa-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.empresa-kpi-pill {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+    box-shadow: var(--ea-card-shadow);
+    border: none;
+}
+
+.empresa-kpi-pill .k {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6c757d;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.empresa-kpi-pill .v {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--ea-primary-dark);
+    line-height: 1.2;
+}
+
+.empresa-kpi-pill .u {
+    font-size: 0.75rem;
+    color: #8899a8;
+}
+
+/* Timeline */
+.empresa-timeline {
+    position: relative;
+    padding-left: 0;
+    list-style: none;
+    margin: 0;
+}
+
+.empresa-timeline li {
+    position: relative;
+    padding-left: 2rem;
+    padding-bottom: 1.25rem;
+}
+
+.empresa-timeline li:last-child {
+    padding-bottom: 0;
+}
+
+.empresa-timeline li::before {
+    content: '';
+    position: absolute;
+    left: 0.45rem;
+    top: 0.5rem;
+    bottom: -0.25rem;
+    width: 2px;
+    background: linear-gradient(180deg, var(--ea-primary) 0%, rgba(26, 82, 118, 0.15) 100%);
+}
+
+.empresa-timeline li:last-child::before {
+    bottom: auto;
+    height: 0;
+}
+
+.empresa-timeline .dot {
+    position: absolute;
+    left: 0;
+    top: 0.2rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--ea-primary);
+    box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.12);
+}
+
+.empresa-timeline .when {
+    font-size: 0.75rem;
+    color: #8899a8;
+    margin-bottom: 0.2rem;
+}
+
+.empresa-timeline .what {
+    font-size: 0.9rem;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+/* Métricas fila superior dashboard */
+.empresa-stat-tile {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.35rem 1.5rem;
+    box-shadow: var(--ea-card-shadow);
+    border: none;
+    height: 100%;
+}
+
+.empresa-stat-tile .val {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: var(--ea-primary-dark);
+    line-height: 1.2;
+}
+
+.empresa-stat-tile .lab {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.35rem;
+}
+
+/* Responsive sidebar */
+@media (max-width: 991.98px) {
+    .empresa-menu-toggle {
+        display: inline-flex;
+    }
+
+    .empresa-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+        transition: transform 0.28s ease;
+    }
+
+    body.empresa-sidebar-open .empresa-sidebar {
+        transform: translateX(0);
+    }
+
+    .empresa-main {
+        padding: 1.25rem 1rem 2rem;
+    }
+
+    .empresa-topbar-title {
+        max-width: 42vw;
+    }
+}

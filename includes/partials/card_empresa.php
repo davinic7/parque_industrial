@@ -22,19 +22,19 @@ $email_contacto = $emp['email_contacto'] ?? null;
 $url_perfil = $emp_id ? (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/empresa.php?id=' . (int)$emp_id : '#';
 $rubro_ok = ($rubro !== null && $rubro !== '');
 ?>
-<div class="col-md-6 col-lg-4">
+<div class="col-12 col-sm-10 col-md-6 col-lg-4 mx-auto mx-md-0">
     <div class="empresa-card h-100 d-flex flex-column">
         <div class="card-img">
             <?php if (!empty($logo) && defined('UPLOADS_URL')): ?>
                 <img src="<?= e(uploads_resolve_url($logo, 'logos')) ?>" alt="<?= e($nombre) ?>">
             <?php else: ?>
-                <i class="bi bi-building placeholder-icon" style="font-size: 4rem; color: #ccc;" aria-hidden="true"></i>
+                <i class="bi bi-building placeholder-icon" aria-hidden="true"></i>
             <?php endif; ?>
         </div>
-        <div class="card-body flex-grow-1">
+        <div class="card-body flex-grow-1 d-flex flex-column">
             <span class="card-rubro<?= $rubro_ok ? '' : ' rubro-faltante' ?>"><?= $rubro_ok ? e($rubro) : 'Sin rubro' ?></span>
-            <h5 class="card-title mt-2"><?= e($nombre) ?></h5>
-            <ul class="list-unstyled small empresa-card-meta mb-0">
+            <h5 class="card-title mt-2 mb-1"><?= e($nombre) ?></h5>
+            <ul class="list-unstyled small empresa-card-meta mb-0 flex-grow-1">
                 <li class="mb-1"><i class="bi bi-geo-alt text-primary me-1"></i><?= ($ubicacion !== null && $ubicacion !== '') ? e($ubicacion) : '<span class="text-muted">Sin ubicación</span>' ?></li>
                 <?php if ($show_contact): ?>
                 <li class="mb-1"><i class="bi bi-signpost text-primary me-1"></i><?= !empty($direccion) ? e($direccion) : '<span class="text-muted">—</span>' ?></li>
@@ -44,13 +44,23 @@ $rubro_ok = ($rubro !== null && $rubro !== '');
                 <?php endif; ?>
             </ul>
         </div>
-        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
-            <a href="<?= e($url_perfil) ?>" class="btn btn-sm btn-outline-primary">Ver perfil</a>
-            <?php if ($show_visitas && $visitas !== null): ?>
-                <small class="text-muted"><i class="bi bi-eye"></i> <?= function_exists('format_number') ? format_number($visitas) : (int)$visitas ?></small>
-            <?php endif; ?>
-            <?php if ($show_tel_button && !empty($telefono)): ?>
-                <a href="tel:<?= e($telefono) ?>" class="btn btn-sm btn-outline-success" title="Llamar"><i class="bi bi-telephone"></i></a>
+        <div class="card-footer empresa-card-footer border-0">
+            <a href="<?= e($url_perfil) ?>" class="btn btn-primary w-100 py-2">
+                <i class="bi bi-building me-1"></i>Ver perfil
+            </a>
+            <?php if (($show_tel_button && !empty($telefono)) || ($show_visitas && $visitas !== null)): ?>
+            <div class="d-flex align-items-center justify-content-between gap-2 mt-2 pt-2 empresa-card-footer-meta">
+                <?php if ($show_tel_button && !empty($telefono)): ?>
+                <a href="tel:<?= e(preg_replace('/\s+/', '', $telefono)) ?>" class="btn btn-outline-secondary btn-sm flex-shrink-0">
+                    <i class="bi bi-telephone-fill me-1"></i>Llamar
+                </a>
+                <?php else: ?>
+                <span class="d-none d-sm-block flex-grow-1"></span>
+                <?php endif; ?>
+                <?php if ($show_visitas && $visitas !== null): ?>
+                <span class="empresa-card-visitas text-muted small ms-auto"><i class="bi bi-eye-fill me-1"></i><?= function_exists('format_number') ? format_number($visitas) : (int)$visitas ?></span>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>

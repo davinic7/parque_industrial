@@ -449,22 +449,17 @@ section.empresa-public.section { padding-top: 1.25rem; padding-bottom: 2.25rem; 
     </div>
 </section>
 
+<script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Coordenadas de la empresa o del parque por defecto
-    const lat = <?= $empresa['latitud'] ?? -28.4696 ?>;
-    const lng = <?= $empresa['longitud'] ?? -65.7795 ?>;
-    
-    const map = L.map('empresaMap').setView([lat, lng], 15);
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
-    
+    const lat = <?= (float)($empresa['latitud'] ?? MAP_DEFAULT_LAT) ?>;
+    const lng = <?= (float)($empresa['longitud'] ?? MAP_DEFAULT_LNG) ?>;
+    const map = L.map('empresaMap', { zoomControl: true }).setView([lat, lng], 15);
+    ParqueLeaflet.addSatelliteLayer(map);
+    ParqueLeaflet.freezeMap(map);
     L.marker([lat, lng])
         .addTo(map)
-        .bindPopup('<strong><?= e($empresa['nombre']) ?></strong><br><?= e($empresa['ubicacion'] ?? '') ?>')
-        .openPopup();
+        .bindPopup('<strong><?= e($empresa['nombre']) ?></strong><br><?= e($empresa['ubicacion'] ?? '') ?>');
 });
 </script>
 

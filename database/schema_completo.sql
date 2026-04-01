@@ -271,6 +271,7 @@ CREATE TABLE mensajes (
     empresa_id INT NULL,
     
     asunto VARCHAR(255) NOT NULL,
+    categoria VARCHAR(80) NULL DEFAULT NULL COMMENT 'Mensajes salientes empresa → ministerio',
     contenido TEXT NOT NULL,
     
     -- Archivos adjuntos (JSON array de rutas)

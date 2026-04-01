@@ -40,7 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
                 $msg = ($accion === 'aprobar')
                     ? "Su declaración del período {$form_data['periodo']} fue aprobada."
                     : "Su declaración del período {$form_data['periodo']} fue rechazada. Revise las observaciones.";
-                crear_notificacion($emp_user['usuario_id'], 'formulario_revisado', $titulo, $msg, EMPRESA_URL . '/formularios.php');
+                crear_notificacion(
+                    $emp_user['usuario_id'],
+                    'formulario_revisado',
+                    $titulo,
+                    $msg,
+                    rtrim(EMPRESA_URL, '/') . '/formularios.php?id=' . $form_id
+                );
             }
 
             log_activity("formulario_$accion", 'datos_empresa', $form_data['empresa_id']);
@@ -266,6 +272,12 @@ $periodos = $db->query("SELECT DISTINCT periodo FROM datos_empresa ORDER BY peri
                             </small>
                         </div>
                     </div>
+                </div>
+                <div class="modal-footer flex-wrap gap-2">
+                    <a href="<?= e(rtrim(EMPRESA_URL, '/') . '/formularios.php?id=' . (int) $f['id']) ?>" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Panel empresa (mismo registro)
+                    </a>
+                    <small class="text-muted ms-auto">Requiere sesión como usuario de la empresa.</small>
                 </div>
             </div>
         </div>

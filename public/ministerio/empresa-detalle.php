@@ -49,7 +49,7 @@ $stmt->execute([$emp_id]);
 $formularios = $stmt->fetchAll();
 
 // Publicaciones
-$stmt = $db->prepare("SELECT id, titulo, tipo, estado, created_at FROM publicaciones WHERE empresa_id = ? ORDER BY created_at DESC LIMIT 5");
+$stmt = $db->prepare('SELECT id, titulo, tipo, estado, slug, created_at FROM publicaciones WHERE empresa_id = ? ORDER BY created_at DESC LIMIT 5');
 $stmt->execute([$emp_id]);
 $publicaciones = $stmt->fetchAll();
 
@@ -223,10 +223,10 @@ $perfil_completo = round(($completos / count($campos_perfil)) * 100);
                     </div>
                     <div class="card-body p-0">
                         <table class="table table-hover mb-0">
-                            <thead><tr><th>Período</th><th>Empleados</th><th>Capacidad</th><th>Estado</th><th>Fecha</th></tr></thead>
+                            <thead><tr><th>Período</th><th>Empleados</th><th>Capacidad</th><th>Estado</th><th>Fecha</th><th class="text-end">Panel empresa</th></tr></thead>
                             <tbody>
                                 <?php if (empty($formularios)): ?>
-                                <tr><td colspan="5" class="text-center text-muted py-3">Sin formularios enviados</td></tr>
+                                <tr><td colspan="6" class="text-center text-muted py-3">Sin formularios enviados</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($formularios as $f): ?>
                                 <tr>
@@ -238,6 +238,9 @@ $perfil_completo = round(($completos / count($campos_perfil)) * 100);
                                         <span class="badge <?= $badge_form[$f['estado']] ?? 'bg-secondary' ?>"><?= ucfirst($f['estado']) ?></span>
                                     </td>
                                     <td><?= $f['fecha_declaracion'] ? format_datetime($f['fecha_declaracion']) : '-' ?></td>
+                                    <td class="text-end">
+                                        <a href="<?= e(rtrim(EMPRESA_URL, '/') . '/formularios.php?id=' . (int) $f['id']) ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary" title="Mismo registro en el panel empresa (sesión como usuario empresa)"><i class="bi bi-box-arrow-up-right"></i></a>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -296,6 +299,11 @@ $perfil_completo = round(($completos / count($campos_perfil)) * 100);
                             <strong><?= e($pub['titulo']) ?></strong>
                             <br><small class="text-muted"><?= ucfirst($pub['tipo']) ?> | <?= format_datetime($pub['created_at']) ?></small>
                             <span class="badge <?= $pub['estado'] === 'aprobado' ? 'bg-success' : ($pub['estado'] === 'pendiente' ? 'bg-warning text-dark' : 'bg-secondary') ?> float-end"><?= ucfirst($pub['estado']) ?></span>
+                            <?php if (in_array($pub['estado'], ['borrador', 'rechazado'], true)): ?>
+                            <br><a href="<?= e(rtrim(EMPRESA_URL, '/') . '/publicaciones.php?editar=' . (int) $pub['id']) ?>" target="_blank" rel="noopener" class="small">Editar en panel empresa</a>
+                            <?php elseif ($pub['estado'] === 'aprobado' && !empty($pub['slug'])): ?>
+                            <br><a href="<?= e(rtrim(PUBLIC_URL, '/') . '/publicacion.php?slug=' . rawurlencode($pub['slug'])) ?>" target="_blank" rel="noopener" class="small">Ver publicada</a>
+                            <?php endif; ?>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -323,9 +331,11 @@ $perfil_completo = round(($completos / count($campos_perfil)) * 100);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <?php if ($empresa['latitud'] && $empresa['longitud']): ?>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
     <script>
-        const map = L.map('mapDetalle').setView([<?= (float)$empresa['latitud'] ?>, <?= (float)$empresa['longitud'] ?>], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        const map = L.map('mapDetalle', { zoomControl: false }).setView([<?= (float)$empresa['latitud'] ?>, <?= (float)$empresa['longitud'] ?>], 15);
+        ParqueLeaflet.addSatelliteLayer(map);
+        ParqueLeaflet.freezeMap(map);
         L.marker([<?= (float)$empresa['latitud'] ?>, <?= (float)$empresa['longitud'] ?>]).addTo(map).bindPopup('<?= e($empresa['nombre']) ?>');
     </script>
     <?php endif; ?>

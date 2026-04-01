@@ -201,35 +201,12 @@ if (!$formulario) {
         }
     }
 }
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Parque Industrial</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
-</head>
-<body>
-    <aside class="sidebar">
-        <div class="sidebar-header"><span class="text-white fw-bold">Parque Industrial</span></div>
-        <nav class="sidebar-menu">
-            <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="perfil.php"><i class="bi bi-building"></i> Mi Perfil</a>
-            <a href="publicaciones.php"><i class="bi bi-megaphone"></i> Publicaciones</a>
-            <a href="formularios.php"><i class="bi bi-file-earmark-text"></i> Declaración trimestral</a>
-            <a href="formulario_presentacion.php"><i class="bi bi-file-earmark-plus"></i> Formulario inicial</a>
-            <a href="notificaciones.php"><i class="bi bi-bell"></i> Notificaciones</a>
-            <hr class="my-3 border-secondary">
-            <a href="<?= PUBLIC_URL ?>/" target="_blank"><i class="bi bi-globe"></i> Ver sitio público</a>
-            <a href="<?= PUBLIC_URL ?>/logout.php"><i class="bi bi-box-arrow-left"></i> Cerrar sesión</a>
-        </nav>
-    </aside>
 
-    <main class="main-content">
+$empresa_nav = 'formularios';
+$extra_head = '<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">';
+require_once BASEPATH . '/includes/empresa_layout_header.php';
+?>
         <h1 class="h3 mb-4"><?= e($page_title) ?></h1>
 
         <?php if ($mensaje): ?>
@@ -452,25 +429,30 @@ if (!$formulario) {
             </div>
         </form>
         <?php endif; ?>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<?php
+ob_start();
+$puJs = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
+?>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script src="<?= $puJs ?>/js/parque-leaflet.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         <?php if (!empty($preguntas)): ?>
         <?php foreach ($preguntas as $p):
             $campo_name = 'campo_' . $p['id'];
             $es_ubicacion = (stripos($p['etiqueta'], 'ubicacion') !== false || stripos($p['etiqueta'], 'ubicación') !== false);
-            if (!$es_ubicacion) continue;
+            if (!$es_ubicacion) {
+                continue;
+            }
         ?>
         (function() {
             const input = document.getElementById('<?= e($campo_name) ?>');
-            const mapEl = document.getElementById('mapUbicacion<?= $p['id'] ?>');
+            const mapEl = document.getElementById('mapUbicacion<?= (int) $p['id'] ?>');
             if (!input || !mapEl) return;
 
-            let lat = <?= MAP_DEFAULT_LAT ?>;
-            let lng = <?= MAP_DEFAULT_LNG ?>;
+            let lat = <?= (float) MAP_DEFAULT_LAT ?>;
+            let lng = <?= (float) MAP_DEFAULT_LNG ?>;
 
             if (input.value && input.value.includes(',')) {
                 const parts = input.value.split(',');
@@ -483,9 +465,7 @@ if (!$formulario) {
             }
 
             const map = L.map(mapEl).setView([lat, lng], 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19
-            }).addTo(map);
+            ParqueLeaflet.addSatelliteLayer(map);
 
             let marker = null;
             if (input.value && input.value.includes(',')) {
@@ -504,6 +484,7 @@ if (!$formulario) {
         <?php endif; ?>
     });
     </script>
-</body>
-</html>
+<?php
+$extra_scripts = ob_get_clean();
+require_once BASEPATH . '/includes/empresa_layout_footer.php';
 

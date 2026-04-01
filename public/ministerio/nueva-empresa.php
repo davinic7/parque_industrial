@@ -317,9 +317,10 @@ $ubicaciones = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
     <script>
         const map = L.map('mapNueva').setView([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>], <?= MAP_DEFAULT_ZOOM ?>);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        ParqueLeaflet.addSatelliteLayer(map);
 
         let marker = null;
 

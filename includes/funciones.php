@@ -186,6 +186,62 @@ function uploads_resolve_url(?string $stored, string $subdir): string {
 }
 
 /**
+ * MIME detectado y normalizado a uno de la lista permitida (JPG a veces llega como octet-stream).
+ */
+function resolve_upload_mime_to_allowed(array $file, array $allowed): ?string {
+    $tmp = $file['tmp_name'] ?? '';
+    if ($tmp === '' || !is_uploaded_file($tmp)) {
+        return null;
+    }
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($tmp);
+    if (in_array($mime, $allowed, true)) {
+        return $mime;
+    }
+    static $aliases = [
+        'image/jpg' => 'image/jpeg',
+        'image/pjpeg' => 'image/jpeg',
+        'image/x-png' => 'image/png',
+    ];
+    if (isset($aliases[$mime]) && in_array($aliases[$mime], $allowed, true)) {
+        return $aliases[$mime];
+    }
+    // SVG (logos ministerio): finfo suele dar xml/octet-stream
+    if (in_array('image/svg+xml', $allowed, true)) {
+        $ext = strtolower(pathinfo($file['name'] ?? '', PATHINFO_EXTENSION));
+        if ($ext === 'svg') {
+            $head = @file_get_contents($tmp, false, null, 0, 500);
+            if (is_string($head) && preg_match('/<\s*svg\b/i', $head)) {
+                $svg_mimes = [
+                    'image/svg+xml', 'text/xml', 'application/xml', 'text/plain',
+                    'application/octet-stream', 'binary/octet-stream', 'text/svg+xml',
+                ];
+                if ($mime === '' || in_array($mime, $svg_mimes, true)) {
+                    return 'image/svg+xml';
+                }
+            }
+        }
+    }
+    if (in_array($mime, ['application/octet-stream', 'binary/octet-stream', 'application/x-empty'], true) || $mime === '') {
+        $info = @getimagesize($tmp);
+        if ($info === false) {
+            return null;
+        }
+        $map = [
+            IMAGETYPE_JPEG => 'image/jpeg',
+            IMAGETYPE_PNG => 'image/png',
+            IMAGETYPE_GIF => 'image/gif',
+            IMAGETYPE_WEBP => 'image/webp',
+        ];
+        $canon = $map[$info[2] ?? 0] ?? null;
+        if ($canon && in_array($canon, $allowed, true)) {
+            return $canon;
+        }
+    }
+    return null;
+}
+
+/**
  * Subida de imagen: Cloudinary si está configurado; si no, disco local (upload_file).
  * En BD se guarda la URL completa o el nombre de archivo local.
  */
@@ -195,12 +251,11 @@ function upload_image_storage(array $file, string $directory, ?array $allowed_ty
         return ['success' => false, 'error' => 'Error al subir el archivo'];
     }
     if ($file['size'] > MAX_FILE_SIZE) {
-        return ['success' => false, 'error' => 'El archivo excede el tamaño máximo'];
+        return ['success' => false, 'error' => 'El archivo excede el tamaño máximo permitido'];
     }
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $mime_type = $finfo->file($file['tmp_name']);
-    if (!in_array($mime_type, $allowed, true)) {
-        return ['success' => false, 'error' => 'Tipo de archivo no permitido'];
+    $mime_type = resolve_upload_mime_to_allowed($file, $allowed);
+    if ($mime_type === null) {
+        return ['success' => false, 'error' => 'Tipo de archivo no permitido para esta carga.'];
     }
     if (cloudinary_configured()) {
         $url = cloudinary_upload_image($file['tmp_name']);
@@ -209,13 +264,14 @@ function upload_image_storage(array $file, string $directory, ?array $allowed_ty
         }
         error_log('upload_image_storage: Cloudinary falló, usando almacenamiento local');
     }
-    return upload_file($file, $directory, $allowed);
+    return upload_file($file, $directory, $allowed, $mime_type);
 }
 
 /**
  * Subir archivo
+ * @param string|null $verified_mime Si ya se validó el MIME (p. ej. resolve_upload_mime_to_allowed), reutilizarlo
  */
-function upload_file($file, $directory = '', $allowed_types = null) {
+function upload_file($file, $directory = '', $allowed_types = null, ?string $verified_mime = null) {
     if (!isset($file['error']) || $file['error'] !== UPLOAD_ERR_OK) {
         return ['success' => false, 'error' => 'Error al subir el archivo'];
     }
@@ -223,11 +279,15 @@ function upload_file($file, $directory = '', $allowed_types = null) {
     if ($file['size'] > MAX_FILE_SIZE) {
         return ['success' => false, 'error' => 'El archivo excede el tamaño máximo'];
     }
+
+    if ($verified_mime !== null && $allowed_types && in_array($verified_mime, $allowed_types, true)) {
+        $mime_type = $verified_mime;
+    } else {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime_type = $finfo->file($file['tmp_name']);
+    }
     
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $mime_type = $finfo->file($file['tmp_name']);
-    
-    if ($allowed_types && !in_array($mime_type, $allowed_types)) {
+    if ($allowed_types && !in_array($mime_type, $allowed_types, true)) {
         return ['success' => false, 'error' => 'Tipo de archivo no permitido'];
     }
     
@@ -251,6 +311,74 @@ function upload_file($file, $directory = '', $allowed_types = null) {
     }
     
     return ['success' => false, 'error' => 'Error al mover el archivo'];
+}
+
+/**
+ * Convierte $_FILES['nombre'] (simple o múltiple) en lista de arrays para upload_file.
+ */
+function normalize_uploaded_files(string $key): array {
+    if (empty($_FILES[$key])) {
+        return [];
+    }
+    $f = $_FILES[$key];
+    if (!is_array($f['name'])) {
+        if (($f['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return [];
+        }
+        return [$f];
+    }
+    $out = [];
+    foreach ($f['name'] as $i => $name) {
+        if ($name === '') {
+            continue;
+        }
+        $err = $f['error'][$i] ?? UPLOAD_ERR_NO_FILE;
+        if ($err === UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        $out[] = [
+            'name' => $f['name'][$i],
+            'type' => $f['type'][$i] ?? '',
+            'tmp_name' => $f['tmp_name'][$i],
+            'error' => $err,
+            'size' => $f['size'][$i] ?? 0,
+        ];
+    }
+    return $out;
+}
+
+/**
+ * Sube hasta $max PDFs bajo uploads/$directory.
+ */
+function upload_pdf_batch(array $fileStructs, string $directory = 'mensajes', int $max = 5): array {
+    $saved = [];
+    $slice = array_slice($fileStructs, 0, max(1, $max));
+    foreach ($slice as $file) {
+        $r = upload_file($file, $directory, ['application/pdf']);
+        if (!$r['success']) {
+            return ['success' => false, 'error' => $r['error'], 'saved' => $saved];
+        }
+        $saved[] = $r['filename'];
+    }
+    return ['success' => true, 'saved' => $saved];
+}
+
+/**
+ * Comprueba si existe una columna en una tabla (MySQL).
+ */
+function db_table_has_column(PDO $db, string $table, string $column): bool {
+    $t = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+    $c = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+    if ($t === '' || $c === '') {
+        return false;
+    }
+    try {
+        $stmt = $db->query("SHOW COLUMNS FROM `{$t}` LIKE '{$c}'");
+
+        return $stmt && (bool) $stmt->fetch();
+    } catch (Throwable $e) {
+        return false;
+    }
 }
 
 /**
@@ -295,6 +423,24 @@ function db_column_is_auto_increment(PDO $db, string $table, string $column = 'i
     } catch (Throwable $e) {
         return true;
     }
+}
+
+/**
+ * Texto amigable para la línea de tiempo del panel empresa (log_actividad.accion).
+ */
+function empresa_traducir_accion_log(string $accion): string {
+    static $map = [
+        'perfil_actualizado' => 'Perfil de empresa actualizado',
+        'publicacion_enviada' => 'Publicación enviada a revisión',
+        'publicacion_guardada' => 'Borrador de publicación guardado',
+        'formulario_enviado' => 'Declaración jurada enviada',
+        'formulario_guardado' => 'Borrador de formulario guardado',
+        'mensaje_enviado_ministerio' => 'Mensaje enviado al Ministerio',
+        'logout' => 'Cierre de sesión',
+        'login' => 'Inicio de sesión',
+    ];
+
+    return $map[$accion] ?? ucfirst(str_replace('_', ' ', $accion));
 }
 
 /**

@@ -9,6 +9,8 @@ if (!$auth->requireRole(['empresa'], PUBLIC_URL . '/login.php')) exit;
 $page_title = 'Mi Perfil';
 $mensaje = '';
 $error = '';
+/** Errores de validación por nombre de campo (evita banner genérico y mantiene el foco en el input). */
+$field_errors = [];
 $empresa_id = $_SESSION['empresa_id'] ?? null;
 
 if (!$empresa_id) {
@@ -43,10 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         set_flash('success', 'Imagen agregada a la galería.');
                         redirect('perfil.php');
                     } else {
-                        $error = $upload['error'];
+                        $field_errors['galeria_imagen'] = $upload['error'];
                     }
                 } catch (Exception $e) {
-                    $error = 'No se pudo subir la imagen.';
+                    $field_errors['galeria_imagen'] = 'No se pudo subir la imagen.';
                 }
             }
 
@@ -85,15 +87,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $instagram = trim($_POST['instagram'] ?? '');
 
             // Validaciones
-            if (empty($nombre)) {
-                $error = 'El nombre comercial es obligatorio';
-            } elseif ($rubro === null || $rubro === '') {
-                $error = 'Seleccioná un rubro';
-            } elseif ($cuit_digits !== '' && !is_valid_cuit($cuit_digits)) {
-                $error = 'El CUIT no es válido: los 11 dígitos deben ser los de tu constancia de AFIP (el último es un dígito verificador, no es cualquier número). Revisá que no falte ni sobra un dígito; con o sin guiones está bien.';
-            } elseif (!empty($email_contacto) && !is_valid_email($email_contacto)) {
-                $error = 'El email de contacto no es válido';
-            } else {
+            if ($nombre === '') {
+                $field_errors['nombre'] = 'El nombre comercial es obligatorio';
+            }
+            if ($rubro === null || $rubro === '') {
+                $field_errors['rubro'] = 'Seleccioná un rubro';
+            }
+            if ($cuit_digits !== '' && !is_valid_cuit($cuit_digits)) {
+                $field_errors['cuit'] = 'CUIT no válido: deben ser los 11 dígitos de AFIP (el último es verificador). Revisá que no falte ni sobre un dígito; con o sin guiones está bien.';
+            }
+            if ($email_contacto !== '' && !is_valid_email($email_contacto)) {
+                $field_errors['email_contacto'] = 'El email de contacto no es válido';
+            }
+
+            if (empty($field_errors)) {
                 // Procesar logo si se subió
                 $logo_filename = $datos_anteriores['logo'];
                 if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
@@ -101,11 +108,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($upload['success']) {
                         $logo_filename = $upload['filename'];
                     } else {
-                        $error = $upload['error'];
+                        $field_errors['logo'] = $upload['error'];
                     }
                 }
 
-                if (empty($error)) {
+                if (empty($field_errors)) {
                     $cuit_guardar = ($cuit_digits !== '') ? format_cuit_argentina($cuit_digits) : '';
                     $stmt = $db->prepare("
                         UPDATE empresas SET
@@ -154,7 +161,11 @@ if (!$empresa) {
 }
 
 // Tras un error de validación, mantener lo que el usuario cargó (no volver todo a la BD)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error !== '') {
+$csrf_msg = 'Token de seguridad inválido. Recargue la página.';
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && (!empty($field_errors) || ($error !== '' && $error !== $csrf_msg))
+) {
     $campos_texto = [
         'nombre', 'razon_social', 'cuit', 'rubro', 'descripcion', 'ubicacion', 'direccion',
         'telefono', 'email_contacto', 'contacto_nombre', 'sitio_web', 'facebook', 'instagram',
@@ -196,35 +207,11 @@ try {
 } catch (Exception $e) {
     $galeria_imagenes = [];
 }
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Parque Industrial</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
-</head>
-<body>
-    <aside class="sidebar">
-        <div class="sidebar-header"><span class="text-white fw-bold">Parque Industrial</span></div>
-        <nav class="sidebar-menu">
-            <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="perfil.php" class="active"><i class="bi bi-building"></i> Mi Perfil</a>
-            <a href="publicaciones.php"><i class="bi bi-megaphone"></i> Publicaciones</a>
-            <a href="formularios.php"><i class="bi bi-file-earmark-text"></i> Formularios</a>
-            <a href="mensajes.php"><i class="bi bi-envelope"></i> Mensajes</a>
-            <a href="notificaciones.php"><i class="bi bi-bell"></i> Notificaciones</a>
-            <hr class="my-3 border-secondary">
-            <a href="<?= PUBLIC_URL ?>/" target="_blank"><i class="bi bi-globe"></i> Ver sitio público</a>
-            <a href="<?= PUBLIC_URL ?>/logout.php"><i class="bi bi-box-arrow-left"></i> Cerrar sesión</a>
-        </nav>
-    </aside>
 
-    <main class="main-content">
+$empresa_nav = '';
+$extra_head = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">';
+require_once BASEPATH . '/includes/empresa_layout_header.php';
+?>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0">Editar Perfil de Empresa</h1>
             <a href="<?= PUBLIC_URL ?>/empresa.php?id=<?= $empresa['id'] ?>" target="_blank" class="btn btn-outline-primary">
@@ -257,7 +244,10 @@ try {
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Nombre comercial *</label>
-                                    <input type="text" name="nombre" class="form-control" value="<?= e($empresa['nombre']) ?>" required>
+                                    <input type="text" name="nombre" class="form-control<?= isset($field_errors['nombre']) ? ' is-invalid' : '' ?>" value="<?= e($empresa['nombre']) ?>" required>
+                                    <?php if (isset($field_errors['nombre'])): ?>
+                                    <div class="invalid-feedback d-block"><?= e($field_errors['nombre']) ?></div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Razón social</label>
@@ -265,17 +255,24 @@ try {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">CUIT</label>
-                                    <input type="text" name="cuit" id="inputCuit" class="form-control" value="<?= e($empresa['cuit'] ?? '') ?>" placeholder="Ej. 20-12345678-6" inputmode="numeric" autocomplete="off" maxlength="13">
+                                    <input type="text" name="cuit" id="inputCuit" class="form-control<?= isset($field_errors['cuit']) ? ' is-invalid' : '' ?>" value="<?= e($empresa['cuit'] ?? '') ?>" placeholder="Ej. 20-12345678-6" inputmode="numeric" autocomplete="off" maxlength="13">
+                                    <?php if (isset($field_errors['cuit'])): ?>
+                                    <div class="invalid-feedback d-block"><?= e($field_errors['cuit']) ?></div>
+                                    <?php else: ?>
                                     <small class="text-muted">Usá el CUIT tal como figura en AFIP: 11 dígitos y el último es verificador (un cambio de un solo dígito suele invalidarlo). Guiones opcionales. Vacío si no aplica.</small>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Rubro *</label>
-                                    <select name="rubro" class="form-select" required>
+                                    <select name="rubro" class="form-select<?= isset($field_errors['rubro']) ? ' is-invalid' : '' ?>" required>
                                         <option value="">Seleccione...</option>
                                         <?php foreach ($rubros as $r): ?>
                                         <option value="<?= e($r) ?>" <?= ($empresa['rubro'] ?? '') === $r ? 'selected' : '' ?>><?= e($r) ?></option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <?php if (isset($field_errors['rubro'])): ?>
+                                    <div class="invalid-feedback d-block"><?= e($field_errors['rubro']) ?></div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Descripción</label>
@@ -304,8 +301,26 @@ try {
                                     <input type="text" name="direccion" class="form-control" value="<?= e($empresa['direccion'] ?? '') ?>">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Ubicación en mapa <small class="text-muted">(clic para marcar)</small></label>
-                                    <div id="mapPicker" style="height: 250px; border-radius: 8px;"></div>
+                                    <label class="form-label">Ubicación en el mapa</label>
+                                    <p class="text-muted small mb-2 mb-md-3">Vista previa <strong>fija</strong> (satélite). Para marcar o cambiar el punto, abrí el mapa con el botón, hacé clic (o arrastrá el marcador) y cerrá con «Listo».</p>
+                                    <div id="mapPreviewWrap" class="border rounded overflow-hidden shadow-sm mb-2">
+                                        <div id="mapPreview" class="map-preview-ficha" style="display: none; height: 200px;"></div>
+                                        <div id="mapPreviewEmpty" class="d-flex align-items-center justify-content-center text-muted small px-3 py-5">
+                                            <span class="text-center"><i class="bi bi-geo-alt d-block fs-3 mb-2 opacity-50"></i>Aún no hay ubicación. Tocá «Seleccionar ubicación en el mapa».</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                        <button type="button" class="btn btn-outline-primary" id="btnAbrirMapaUbicacion">
+                                            <i class="bi bi-map me-1"></i>Seleccionar ubicación en el mapa
+                                        </button>
+                                        <button type="button" class="btn btn-success d-none" id="btnCerrarMapaUbicacion">
+                                            <i class="bi bi-check2 me-1"></i>Listo
+                                        </button>
+                                    </div>
+                                    <div id="mapEditorPanel" class="d-none border rounded overflow-hidden p-2 p-md-3 bg-light">
+                                        <p class="small text-muted mb-2">Mapa interactivo · clic para ubicar · marcador arrastrable · zoom con controles o rueda</p>
+                                        <div id="mapPicker" style="height: 300px; border-radius: 8px;"></div>
+                                    </div>
                                     <input type="hidden" name="latitud" id="latitud" value="<?= e($empresa['latitud'] ?? '') ?>">
                                     <input type="hidden" name="longitud" id="longitud" value="<?= e($empresa['longitud'] ?? '') ?>">
                                 </div>
@@ -324,7 +339,10 @@ try {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Email de contacto</label>
-                                    <input type="email" name="email_contacto" class="form-control" value="<?= e($empresa['email_contacto'] ?? '') ?>">
+                                    <input type="email" name="email_contacto" class="form-control<?= isset($field_errors['email_contacto']) ? ' is-invalid' : '' ?>" value="<?= e($empresa['email_contacto'] ?? '') ?>">
+                                    <?php if (isset($field_errors['email_contacto'])): ?>
+                                    <div class="invalid-feedback d-block"><?= e($field_errors['email_contacto']) ?></div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Persona de contacto</label>
@@ -355,8 +373,14 @@ try {
                                 ?>
                                 <img id="logoPreview" src="<?= $logo_src ?>" alt="Logo" class="img-fluid rounded d-block mx-auto" style="max-height: 150px; background: #f8f9fa;">
                             </div>
-                            <input type="file" name="logo" class="form-control" accept="image/*">
-                            <small class="text-muted">JPG, PNG. Máx 2MB.</small>
+                            <input type="file" name="logo" class="form-control<?= isset($field_errors['logo']) ? ' is-invalid' : '' ?>" accept="image/*">
+                            <?php if (isset($field_errors['logo'])): ?>
+                            <div class="invalid-feedback d-block text-start"><?= e($field_errors['logo']) ?></div>
+                            <small class="text-muted d-block">Volvé a elegir el archivo si querés cambiar el logo.</small>
+                            <?php else: ?>
+                            <?php $logo_max_mb = max(1, (int) ceil(MAX_FILE_SIZE / 1048576)); ?>
+                            <small class="text-muted">JPG, PNG, GIF, WebP. Máx. <?= (int) $logo_max_mb ?> MB.</small>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -411,7 +435,10 @@ try {
                         <form method="POST" enctype="multipart/form-data" class="d-flex align-items-end gap-2 flex-wrap">
                             <?= csrf_field() ?>
                             <div class="flex-grow-1" style="min-width: 200px;">
-                                <input type="file" name="galeria_imagen" class="form-control form-control-sm" accept="image/*" required>
+                                <input type="file" name="galeria_imagen" class="form-control form-control-sm<?= isset($field_errors['galeria_imagen']) ? ' is-invalid' : '' ?>" accept="image/*" required>
+                                <?php if (isset($field_errors['galeria_imagen'])): ?>
+                                <div class="invalid-feedback d-block"><?= e($field_errors['galeria_imagen']) ?></div>
+                                <?php endif; ?>
                             </div>
                             <button type="submit" class="btn btn-primary btn-sm">Agregar imagen</button>
                         </form>
@@ -420,12 +447,15 @@ try {
             </div>
         </div>
         <?php endif; ?>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<?php
+$pu = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
+$mapLat = (float) MAP_DEFAULT_LAT;
+$mapLng = (float) MAP_DEFAULT_LNG;
+$extra_scripts = <<<HTML
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script src="{$pu}/js/parque-leaflet.js"></script>
     <script>
-        // CUIT: solo dígitos + guiones automáticos XX-XXXXXXXX-X
         (function() {
             const cuitEl = document.getElementById('inputCuit');
             if (!cuitEl) return;
@@ -446,7 +476,6 @@ try {
             });
         })();
 
-        // Preview de imagen
         document.querySelector('input[name="logo"]').addEventListener('change', function() {
             if (this.files[0]) {
                 const reader = new FileReader();
@@ -455,23 +484,118 @@ try {
             }
         });
 
-        // Mapa para seleccionar ubicación
-        const lat = parseFloat(document.getElementById('latitud').value) || <?= MAP_DEFAULT_LAT ?>;
-        const lng = parseFloat(document.getElementById('longitud').value) || <?= MAP_DEFAULT_LNG ?>;
-        const map = L.map('mapPicker').setView([lat, lng], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        (function() {
+            const defLat = {$mapLat};
+            const defLng = {$mapLng};
+            const latEl = document.getElementById('latitud');
+            const lngEl = document.getElementById('longitud');
+            const previewEl = document.getElementById('mapPreview');
+            const emptyEl = document.getElementById('mapPreviewEmpty');
+            const editorPanel = document.getElementById('mapEditorPanel');
+            const btnAbrir = document.getElementById('btnAbrirMapaUbicacion');
+            const btnCerrar = document.getElementById('btnCerrarMapaUbicacion');
+            let previewMap = null;
+            let editorMap = null;
+            let editorMarker = null;
 
-        let marker;
-        if (document.getElementById('latitud').value && document.getElementById('longitud').value) {
-            marker = L.marker([lat, lng]).addTo(map);
-        }
+            function hasCoords() {
+                const la = parseFloat(latEl.value);
+                const ln = parseFloat(lngEl.value);
+                return latEl.value.trim() !== '' && lngEl.value.trim() !== '' && !isNaN(la) && !isNaN(ln);
+            }
 
-        map.on('click', function(e) {
-            if (marker) map.removeLayer(marker);
-            marker = L.marker(e.latlng).addTo(map);
-            document.getElementById('latitud').value = e.latlng.lat.toFixed(8);
-            document.getElementById('longitud').value = e.latlng.lng.toFixed(8);
-        });
+            function getPair() {
+                if (hasCoords()) {
+                    return [parseFloat(latEl.value), parseFloat(lngEl.value)];
+                }
+                return [defLat, defLng];
+            }
+
+            function destroyPreview() {
+                if (previewMap) {
+                    previewMap.remove();
+                    previewMap = null;
+                }
+                previewEl.style.display = 'none';
+            }
+
+            function buildPreview() {
+                destroyPreview();
+                if (!hasCoords()) {
+                    emptyEl.classList.remove('d-none');
+                    return;
+                }
+                emptyEl.classList.add('d-none');
+                previewEl.style.display = 'block';
+                const ll = getPair();
+                previewMap = L.map('mapPreview', { zoomControl: false }).setView(ll, 16);
+                ParqueLeaflet.addSatelliteLayer(previewMap);
+                ParqueLeaflet.freezeMap(previewMap);
+                L.marker(ll).addTo(previewMap);
+                requestAnimationFrame(function() { previewMap.invalidateSize(); });
+            }
+
+            function bindMarkerDrag(m) {
+                m.on('dragend', function(ev) {
+                    const p = ev.target.getLatLng();
+                    latEl.value = p.lat.toFixed(8);
+                    lngEl.value = p.lng.toFixed(8);
+                });
+            }
+
+            function destroyEditor() {
+                if (editorMap) {
+                    editorMap.remove();
+                    editorMap = null;
+                    editorMarker = null;
+                }
+            }
+
+            function openEditor() {
+                editorPanel.classList.remove('d-none');
+                btnAbrir.classList.add('d-none');
+                btnCerrar.classList.remove('d-none');
+                destroyEditor();
+                const ll = getPair();
+                const z = hasCoords() ? 16 : 13;
+                editorMap = L.map('mapPicker').setView(ll, z);
+                ParqueLeaflet.addSatelliteLayer(editorMap);
+
+                function applyPos(latlng) {
+                    latEl.value = latlng.lat.toFixed(8);
+                    lngEl.value = latlng.lng.toFixed(8);
+                }
+
+                if (hasCoords()) {
+                    editorMarker = L.marker(ll, { draggable: true }).addTo(editorMap);
+                    bindMarkerDrag(editorMarker);
+                }
+
+                editorMap.on('click', function(e) {
+                    if (editorMarker) {
+                        editorMarker.setLatLng(e.latlng);
+                    } else {
+                        editorMarker = L.marker(e.latlng, { draggable: true }).addTo(editorMap);
+                        bindMarkerDrag(editorMarker);
+                    }
+                    applyPos(e.latlng);
+                });
+
+                setTimeout(function() { editorMap.invalidateSize(); }, 250);
+            }
+
+            function closeEditor() {
+                editorPanel.classList.add('d-none');
+                btnCerrar.classList.add('d-none');
+                btnAbrir.classList.remove('d-none');
+                destroyEditor();
+                buildPreview();
+            }
+
+            btnAbrir.addEventListener('click', openEditor);
+            btnCerrar.addEventListener('click', closeEditor);
+            buildPreview();
+        })();
     </script>
-</body>
-</html>
+HTML;
+require_once BASEPATH . '/includes/empresa_layout_footer.php';

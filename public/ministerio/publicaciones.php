@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
         }
 
         // Notificar a la empresa
-        $stmt = $db->prepare("SELECT p.titulo, p.empresa_id, e.usuario_id FROM publicaciones p INNER JOIN empresas e ON p.empresa_id = e.id WHERE p.id = ?");
+        $stmt = $db->prepare('SELECT p.titulo, p.empresa_id, p.slug, e.usuario_id FROM publicaciones p INNER JOIN empresas e ON p.empresa_id = e.id WHERE p.id = ?');
         $stmt->execute([$pub_id]);
         $pub_data = $stmt->fetch();
 
@@ -36,7 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
             $msg = ($accion === 'aprobar')
                 ? "Su publicación \"{$pub_data['titulo']}\" fue aprobada y ya es visible."
                 : "Su publicación \"{$pub_data['titulo']}\" fue rechazada." . ($observaciones ? " Motivo: $observaciones" : '');
-            crear_notificacion($pub_data['usuario_id'], 'publicacion_revisada', $titulo_notif, $msg, EMPRESA_URL . '/publicaciones.php');
+            if ($accion === 'aprobar' && !empty($pub_data['slug'])) {
+                $url_empresa = rtrim(PUBLIC_URL, '/') . '/publicacion.php?slug=' . rawurlencode($pub_data['slug']);
+            } elseif ($accion === 'rechazar') {
+                $url_empresa = rtrim(EMPRESA_URL, '/') . '/publicaciones.php?editar=' . $pub_id;
+            } else {
+                $url_empresa = rtrim(EMPRESA_URL, '/') . '/publicaciones.php';
+            }
+            crear_notificacion($pub_data['usuario_id'], 'publicacion_revisada', $titulo_notif, $msg, $url_empresa);
             log_activity("publicacion_$accion", 'publicaciones', $pub_data['empresa_id']);
         }
 

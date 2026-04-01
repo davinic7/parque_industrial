@@ -36,35 +36,11 @@ if ($formulario) {
 } else {
     $error = 'El formulario de presentación aún no fue configurado por el Ministerio.';
 }
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Parque Industrial</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
-</head>
-<body>
-    <aside class="sidebar">
-        <div class="sidebar-header"><span class="text-white fw-bold">Parque Industrial</span></div>
-        <nav class="sidebar-menu">
-            <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="perfil.php"><i class="bi bi-building"></i> Mi Perfil</a>
-            <a href="publicaciones.php"><i class="bi bi-megaphone"></i> Publicaciones</a>
-            <a href="formularios.php"><i class="bi bi-file-earmark-text"></i> Declaración trimestral</a>
-            <a href="formulario_presentacion.php" class="active"><i class="bi bi-file-earmark-plus"></i> Formulario inicial</a>
-            <a href="notificaciones.php"><i class="bi bi-bell"></i> Notificaciones</a>
-            <hr class="my-3 border-secondary">
-            <a href="<?= PUBLIC_URL ?>/" target="_blank"><i class="bi bi-globe"></i> Ver sitio público</a>
-            <a href="<?= PUBLIC_URL ?>/logout.php"><i class="bi bi-box-arrow-left"></i> Cerrar sesión</a>
-        </nav>
-    </aside>
 
-    <main class="main-content">
+$empresa_nav = 'formularios';
+$extra_head = '<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">';
+require_once BASEPATH . '/includes/empresa_layout_header.php';
+?>
         <h1 class="h3 mb-4">Formulario de presentación y pedido de lote</h1>
 
         <?php if ($error): ?>
@@ -73,9 +49,6 @@ if ($formulario) {
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         <?php endif; ?>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php require_once BASEPATH . '/includes/empresa_layout_footer.php'; ?>
 

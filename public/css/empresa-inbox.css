@@ -1,0 +1,180 @@
+/**
+ * Bandeja de mensajes — panel empresa (layout app)
+ */
+:root {
+    --inbox-primary: #1a4a7a;
+    --inbox-primary-light: #e8f0fa;
+    --inbox-border: #d1dae6;
+    --inbox-muted: #5c6b7a;
+    --inbox-list-w: min(380px, 38vw);
+}
+
+.inbox-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 24px rgba(14, 58, 82, 0.08);
+    min-height: 520px;
+    max-height: calc(100vh - 118px);
+}
+
+@media (min-width: 992px) {
+    .inbox-wrap {
+        flex-direction: row;
+        max-height: calc(100vh - 100px);
+    }
+}
+
+.inbox-toolbar {
+    padding: 12px 14px;
+    background: linear-gradient(180deg, #f4f7fb 0%, #eef3f9 100%);
+    border-bottom: 1px solid var(--inbox-border);
+    flex-shrink: 0;
+}
+
+@media (min-width: 992px) {
+    .inbox-toolbar {
+        border-bottom: none;
+        border-right: 1px solid var(--inbox-border);
+        width: var(--inbox-list-w);
+    }
+}
+
+.inbox-list-col {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--inbox-border);
+    max-height: 42vh;
+}
+
+@media (min-width: 992px) {
+    .inbox-list-col {
+        width: var(--inbox-list-w);
+        min-width: 280px;
+        max-height: none;
+        border-bottom: none;
+        border-right: 1px solid var(--inbox-border);
+    }
+}
+
+.inbox-list-scroll {
+    overflow-y: auto;
+    flex: 1;
+    background: #fafbfd;
+}
+
+.inbox-item {
+    display: block;
+    padding: 12px 14px;
+    border: none;
+    border-bottom: 1px solid var(--inbox-border);
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    color: inherit;
+    text-decoration: none;
+}
+
+.inbox-item:hover {
+    background: #eef4fc;
+}
+
+.inbox-item--active {
+    background: var(--inbox-primary-light);
+    box-shadow: inset 3px 0 0 var(--inbox-primary);
+}
+
+.inbox-item--unread .inbox-item-subject {
+    font-weight: 700;
+    color: #0d1f33;
+}
+
+.inbox-item-subject {
+    font-size: 0.9rem;
+    line-height: 1.3;
+    margin-bottom: 4px;
+    color: #243242;
+}
+
+.inbox-item-meta {
+    font-size: 0.75rem;
+    color: var(--inbox-muted);
+    margin-bottom: 4px;
+}
+
+.inbox-item-snippet {
+    font-size: 0.8rem;
+    color: var(--inbox-muted);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.inbox-detail-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    background: #fff;
+}
+
+.inbox-detail-inner {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 22px;
+}
+
+.inbox-detail-head {
+    border-bottom: 1px solid var(--inbox-border);
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+}
+
+.inbox-detail-head h2 {
+    font-size: 1.15rem;
+    color: var(--inbox-primary);
+    margin: 0 0 8px;
+}
+
+.inbox-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--inbox-muted);
+    padding: 32px;
+}
+
+.inbox-empty i {
+    font-size: 4rem;
+    opacity: 0.35;
+    color: var(--inbox-primary);
+}
+
+.inbox-reply-card {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px dashed var(--inbox-border);
+}
+
+.btn-inbox-primary {
+    background: var(--inbox-primary);
+    border-color: var(--inbox-primary);
+    color: #fff;
+}
+
+.btn-inbox-primary:hover {
+    background: #153d66;
+    border-color: #153d66;
+    color: #fff;
+}

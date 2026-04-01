@@ -43,44 +43,21 @@ $notificaciones = $stmt->fetchAll();
 $stmt = $db->prepare("SELECT COUNT(*) FROM notificaciones WHERE usuario_id = ? AND leida = 0");
 $stmt->execute([$user_id]);
 $no_leidas = $stmt->fetchColumn();
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Parque Industrial</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <aside class="sidebar">
-        <div class="sidebar-header"><span class="text-white fw-bold">Parque Industrial</span></div>
-        <nav class="sidebar-menu">
-            <a href="dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a>
-            <a href="perfil.php"><i class="bi bi-building"></i> Mi Perfil</a>
-            <a href="publicaciones.php"><i class="bi bi-megaphone"></i> Publicaciones</a>
-            <a href="formularios.php"><i class="bi bi-file-earmark-text"></i> Formularios</a>
-            <a href="mensajes.php"><i class="bi bi-envelope"></i> Mensajes</a>
-            <a href="notificaciones.php" class="active"><i class="bi bi-bell"></i> Notificaciones <?php if ($no_leidas): ?><span class="badge bg-danger"><?= $no_leidas ?></span><?php endif; ?></a>
-            <hr class="my-3 border-secondary">
-            <a href="<?= PUBLIC_URL ?>/" target="_blank"><i class="bi bi-globe"></i> Ver sitio público</a>
-            <a href="<?= PUBLIC_URL ?>/logout.php"><i class="bi bi-box-arrow-left"></i> Cerrar sesión</a>
-        </nav>
-    </aside>
 
-    <main class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0">Notificaciones <?php if ($no_leidas): ?><span class="badge bg-danger"><?= $no_leidas ?> sin leer</span><?php endif; ?></h1>
-            <?php if ($no_leidas > 0): ?>
+$empresa_nav = '';
+$extra_head = '<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">';
+require_once BASEPATH . '/includes/empresa_layout_header.php';
+?>
+        <?php if ($no_leidas > 0): ?>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <span class="badge bg-danger"><?= (int) $no_leidas ?> sin leer</span>
             <form method="POST" class="d-inline">
                 <?= csrf_field() ?>
                 <input type="hidden" name="accion" value="leer_todas">
-                <button class="btn btn-outline-primary btn-sm"><i class="bi bi-check-all me-1"></i>Marcar todas como leídas</button>
+                <button class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-check-all me-1"></i>Marcar todas como leídas</button>
             </form>
-            <?php endif; ?>
         </div>
+        <?php endif; ?>
 
         <?php show_flash(); ?>
 
@@ -118,8 +95,5 @@ $no_leidas = $stmt->fetchColumn();
         </div>
         <?= render_pagination($pagination) ?>
         <?php endif; ?>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php require_once BASEPATH . '/includes/empresa_layout_footer.php'; ?>
