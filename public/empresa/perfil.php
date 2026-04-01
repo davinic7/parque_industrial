@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($rubro === null || $rubro === '') {
                 $error = 'Seleccioná un rubro';
             } elseif ($cuit_digits !== '' && !is_valid_cuit($cuit_digits)) {
-                $error = 'El CUIT no es válido (verificá los 11 dígitos). Podés escribirlo con o sin guiones: XX-XXXXXXXX-X.';
+                $error = 'El CUIT no es válido: los 11 dígitos deben ser los de tu constancia de AFIP (el último es un dígito verificador, no es cualquier número). Revisá que no falte ni sobra un dígito; con o sin guiones está bien.';
             } elseif (!empty($email_contacto) && !is_valid_email($email_contacto)) {
                 $error = 'El email de contacto no es válido';
             } else {
@@ -265,8 +265,8 @@ try {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">CUIT</label>
-                                    <input type="text" name="cuit" id="inputCuit" class="form-control" value="<?= e($empresa['cuit'] ?? '') ?>" placeholder="20-12345678-9" inputmode="numeric" autocomplete="off" maxlength="13">
-                                    <small class="text-muted">11 dígitos; podés escribirlos solos o con guiones (se formatea al escribir). Dejalo vacío si no aplica.</small>
+                                    <input type="text" name="cuit" id="inputCuit" class="form-control" value="<?= e($empresa['cuit'] ?? '') ?>" placeholder="Ej. 20-12345678-6" inputmode="numeric" autocomplete="off" maxlength="13">
+                                    <small class="text-muted">Usá el CUIT tal como figura en AFIP: 11 dígitos y el último es verificador (un cambio de un solo dígito suele invalidarlo). Guiones opcionales. Vacío si no aplica.</small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Rubro *</label>
