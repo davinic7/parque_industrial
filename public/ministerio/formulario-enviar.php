@@ -197,27 +197,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
 }
 
 $page_title = 'Enviar formulario';
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'formularios_dinamicos';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
+$ministerio_nav = 'formularios_dinamicos';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <div>
-                <h1 class="h3 mb-0">Enviar formulario a empresas</h1>
+                <h2 class="h4 mb-0 fw-semibold">Enviar formulario a empresas</h2>
                 <p class="text-muted mb-0"><?= e($formulario['titulo']) ?></p>
             </div>
             <a href="formularios-dinamicos.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Volver</a>
@@ -318,19 +304,27 @@ $page_title = 'Enviar formulario';
                 </div>
             </div>
         </form>
-    </main>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function syncFiltros() {
-            const t = document.getElementById('tipoFiltro').value;
-            document.querySelectorAll('.filtro-opt').forEach(el => el.style.display = 'none');
-            if (t === 'rubro') document.getElementById('boxRubros').style.display = 'block';
-            if (t === 'ubicacion') document.getElementById('boxUbic').style.display = 'block';
-            if (t === 'estado') document.getElementById('boxEstado').style.display = 'block';
-            if (t === 'empresas_especificas') document.getElementById('boxEmp').style.display = 'block';
-        }
-        document.getElementById('tipoFiltro').addEventListener('change', syncFiltros);
+
+<?php
+$extra_scripts = <<<'JS'
+<script>
+(function() {
+    function syncFiltros() {
+        const sel = document.getElementById('tipoFiltro');
+        if (!sel) return;
+        const t = sel.value;
+        document.querySelectorAll('.filtro-opt').forEach((el) => { el.style.display = 'none'; });
+        if (t === 'rubro') document.getElementById('boxRubros').style.display = 'block';
+        if (t === 'ubicacion') document.getElementById('boxUbic').style.display = 'block';
+        if (t === 'estado') document.getElementById('boxEstado').style.display = 'block';
+        if (t === 'empresas_especificas') document.getElementById('boxEmp').style.display = 'block';
+    }
+    const tipoFiltro = document.getElementById('tipoFiltro');
+    if (tipoFiltro) {
+        tipoFiltro.addEventListener('change', syncFiltros);
         syncFiltros();
-    </script>
-</body>
-</html>
+    }
+})();
+</script>
+JS;
+require_once BASEPATH . '/includes/ministerio_layout_footer.php';

@@ -38,25 +38,11 @@ $texto_parque = get_config('nosotros_texto', '');
 $contacto_direccion = get_config('nosotros_contacto_direccion', '');
 $contacto_email = get_config('nosotros_contacto_email', '');
 $contacto_telefono = get_config('nosotros_contacto_telefono', '');
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'nosotros';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
-        <h1 class="h3 mb-4"><i class="bi bi-pencil-square me-2"></i>Editar página Nosotros</h1>
+$ministerio_nav = 'nosotros';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
+        <h2 class="h4 mb-4 fw-semibold"><i class="bi bi-pencil-square me-2"></i>Editar página Nosotros</h2>
         <?php show_flash(); ?>
         <p class="text-muted">Los cambios se reflejan en la página pública <a href="<?= PUBLIC_URL ?>/nosotros.php" target="_blank">Nosotros</a>.</p>
 
@@ -99,8 +85,5 @@ $contacto_telefono = get_config('nosotros_contacto_telefono', '');
                 </form>
             </div>
         </div>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>

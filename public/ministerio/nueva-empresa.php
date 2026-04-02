@@ -144,25 +144,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // por eso se quita DISTINCT y se ordena por orden, nombre
 $rubros = $db->query("SELECT nombre FROM rubros WHERE activo = 1 ORDER BY orden, nombre")->fetchAll(PDO::FETCH_COLUMN);
 $ubicaciones = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER BY nombre")->fetchAll(PDO::FETCH_COLUMN);
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'nueva_empresa';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
-        <h1 class="h3 mb-4">Registrar Nueva Empresa</h1>
+$ministerio_nav = 'nueva_empresa';
+$extra_head = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
+        <h2 class="h4 mb-4 fw-semibold">Registrar nueva empresa</h2>
 
         <?php if ($mensaje): ?>
         <div class="alert alert-success"><?= e($mensaje) ?></div>
@@ -313,17 +300,19 @@ $ubicaciones = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER
                 </div>
             </div>
         </form>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<?php
+$pu = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
+$mlat = (float) MAP_DEFAULT_LAT;
+$mlng = (float) MAP_DEFAULT_LNG;
+$mzoom = (int) MAP_DEFAULT_ZOOM;
+$extra_scripts = <<<HTML
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
-    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
+    <script src="{$pu}/js/parque-leaflet.js"></script>
     <script>
-        const map = L.map('mapNueva').setView([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>], <?= MAP_DEFAULT_ZOOM ?>);
+        const map = L.map('mapNueva').setView([{$mlat}, {$mlng}], {$mzoom});
         ParqueLeaflet.addSatelliteLayer(map);
-
         let marker = null;
-
         map.on('click', function(e) {
             if (marker) {
                 marker.setLatLng(e.latlng);
@@ -339,5 +328,5 @@ $ubicaciones = $db->query("SELECT nombre FROM ubicaciones WHERE activo = 1 ORDER
             document.getElementById('longitud').value = e.latlng.lng.toFixed(6);
         });
     </script>
-</body>
-</html>
+HTML;
+require_once BASEPATH . '/includes/ministerio_layout_footer.php';

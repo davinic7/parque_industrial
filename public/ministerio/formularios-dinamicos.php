@@ -50,24 +50,10 @@ foreach ($formularios as &$f) {
     }
 }
 unset($f);
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'formularios_dinamicos';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
+$ministerio_nav = 'formularios_dinamicos';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0">Formularios dinamicos</h1>
             <a href="formulario-nuevo.php" class="btn btn-primary"><i class="bi bi-plus-circle me-2"></i>Nuevo formulario</a>
@@ -133,8 +119,5 @@ unset($f);
                 </tbody>
             </table>
         </div>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>

@@ -64,25 +64,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
 }
 
 $empresas = $db->query("SELECT id, nombre FROM empresas WHERE estado = 'activa' ORDER BY nombre")->fetchAll();
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'comunicados';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
-        <h1 class="h3 mb-4"><i class="bi bi-send me-2"></i>Enviar comunicado</h1>
+$ministerio_nav = 'comunicados';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
+        <h2 class="h4 mb-4 fw-semibold"><i class="bi bi-send me-2"></i>Enviar comunicado</h2>
         <?php show_flash(); ?>
 
         <div class="card">
@@ -112,8 +98,5 @@ $empresas = $db->query("SELECT id, nombre FROM empresas WHERE estado = 'activa' 
                 </form>
             </div>
         </div>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>

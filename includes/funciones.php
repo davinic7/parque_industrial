@@ -173,6 +173,45 @@ function cloudinary_upload_image(string $file_path): ?string {
 }
 
 /**
+ * Sube un archivo arbitrario (p. ej. PDF) a Cloudinary como recurso raw; devuelve secure_url o null.
+ * Imprescindible en hosts con disco efímero (p. ej. Render): los PDF en public/uploads desaparecen al redeploy.
+ */
+function cloudinary_upload_raw(string $file_path): ?string {
+    if (!cloudinary_configured() || !is_readable($file_path)) {
+        return null;
+    }
+    if (!function_exists('curl_init')) {
+        error_log('cloudinary_upload_raw: extensión curl no disponible');
+        return null;
+    }
+    $cloud_name = CLOUDINARY_CLOUD_NAME;
+    $api_key = CLOUDINARY_API_KEY;
+    $api_secret = CLOUDINARY_API_SECRET;
+    $timestamp = time();
+    $signature = sha1('timestamp=' . $timestamp . $api_secret);
+    $endpoint = 'https://api.cloudinary.com/v1_1/' . $cloud_name . '/raw/upload';
+    $ch = curl_init($endpoint);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, [
+        'file' => new CURLFile($file_path, 'application/pdf', basename($file_path)),
+        'api_key' => $api_key,
+        'timestamp' => $timestamp,
+        'signature' => $signature,
+    ]);
+    $response = curl_exec($ch);
+    $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code < 200 || $code >= 300) {
+        error_log('cloudinary_upload_raw: HTTP ' . $code . ' ' . substr((string) $response, 0, 300));
+        return null;
+    }
+    $result = json_decode((string) $response, true);
+
+    return $result['secure_url'] ?? null;
+}
+
+/**
  * URL para mostrar imagen guardada: URL absoluta (Cloudinary) o ruta bajo uploads.
  */
 function uploads_resolve_url(?string $stored, string $subdir): string {
@@ -354,12 +393,31 @@ function upload_pdf_batch(array $fileStructs, string $directory = 'mensajes', in
     $saved = [];
     $slice = array_slice($fileStructs, 0, max(1, $max));
     foreach ($slice as $file) {
-        $r = upload_file($file, $directory, ['application/pdf']);
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'error' => 'Error al subir el archivo', 'saved' => $saved];
+        }
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($file['tmp_name']);
+        if ($mime !== 'application/pdf') {
+            return ['success' => false, 'error' => 'Solo se permiten archivos PDF', 'saved' => $saved];
+        }
+
+        if (cloudinary_configured()) {
+            $cloudUrl = cloudinary_upload_raw($file['tmp_name']);
+            if ($cloudUrl !== null) {
+                $saved[] = $cloudUrl;
+                continue;
+            }
+            error_log('upload_pdf_batch: Cloudinary raw no disponible, intentando disco local');
+        }
+
+        $r = upload_file($file, $directory, ['application/pdf'], 'application/pdf');
         if (!$r['success']) {
             return ['success' => false, 'error' => $r['error'], 'saved' => $saved];
         }
         $saved[] = $r['filename'];
     }
+
     return ['success' => true, 'saved' => $saved];
 }
 

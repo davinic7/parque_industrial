@@ -60,28 +60,15 @@ try {
 } catch (Exception $e) {
     $stats['visitas_mes'] = 0;
 }
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Parque Industrial</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'dashboard';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
+$ministerio_nav = 'dashboard';
+$extra_head = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 class="h3 mb-0">Dashboard del Ministerio</h1>
-                <p class="text-muted mb-0">Panel de control del Parque Industrial</p>
+                <p class="text-muted small mb-1">Panel de control</p>
+                <h2 class="h4 mb-0 fw-semibold">Dashboard del Ministerio</h2>
             </div>
             <a href="nueva-empresa.php" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>Nueva Empresa</a>
         </div>
@@ -165,26 +152,30 @@ try {
                 </div>
             </div>
         </div>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<?php
+$pu = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
+$labelsJson = safe_json_encode($rubros_labels);
+$dataJson = json_encode($rubros_values);
+$lat = (float) MAP_DEFAULT_LAT;
+$lng = (float) MAP_DEFAULT_LNG;
+$extra_scripts = <<<HTML
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
-    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+    <script src="{$pu}/js/parque-leaflet.js"></script>
     <script>
         new Chart(document.getElementById('chartRubros'), {
             type: 'bar',
             data: {
-                labels: <?= safe_json_encode($rubros_labels) ?>,
-                datasets: [{ label: 'Empresas', data: <?= json_encode($rubros_values) ?>, backgroundColor: ['#3498db','#e74c3c','#95a5a6','#27ae60','#f39c12','#9b59b6','#e67e22','#1abc9c'] }]
+                labels: {$labelsJson},
+                datasets: [{ label: 'Empresas', data: {$dataJson}, backgroundColor: ['#3498db','#e74c3c','#95a5a6','#27ae60','#f39c12','#9b59b6','#e67e22','#1abc9c'] }]
             },
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
-        const map = L.map('miniMap', { zoomControl: false }).setView([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>], 13);
+        const map = L.map('miniMap', { zoomControl: false }).setView([{$lat}, {$lng}], 13);
         ParqueLeaflet.addSatelliteLayer(map);
         ParqueLeaflet.freezeMap(map);
-        L.marker([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>]).addTo(map).bindPopup('Parque Industrial');
+        L.marker([{$lat}, {$lng}]).addTo(map).bindPopup('Parque Industrial');
     </script>
-</body>
-</html>
+HTML;
+require_once BASEPATH . '/includes/ministerio_layout_footer.php';

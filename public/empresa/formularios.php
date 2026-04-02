@@ -336,6 +336,29 @@ $extra_head = '<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/f
         .dj-stat label { font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; color: #6c757d; margin-bottom: 4px; }
         .dj-mini { font-size: .8rem; color: #6c757d; }
         .table-dj-actions { white-space: nowrap; }
+        /* Consumos/servicios: label arriba + switch abajo (evita solapamiento del margin negativo de BS) */
+        .dj-switch-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        .dj-switch-cell > label.form-label {
+            line-height: 1.35;
+            margin-bottom: 0;
+            font-weight: 500;
+        }
+        .dj-switch-cell .form-check.form-switch {
+            padding-left: 0;
+            margin-bottom: 0;
+            min-height: 1.5rem;
+        }
+        .dj-switch-cell .form-switch .form-check-input {
+            margin-left: 0;
+            float: none;
+            position: relative;
+            cursor: pointer;
+        }
     </style>';
 require_once BASEPATH . '/includes/empresa_layout_header.php';
 ?>
@@ -498,7 +521,7 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
                             <input type="number" name="consumo_gas" min="0" step="0.01"<?= $attr_ro() ?> value="<?= e($datos['consumo_gas'] ?? '') ?>">
                         </div>
                     </div>
-                    <div class="row g-2 g-md-3">
+                    <div class="row g-3">
                         <?php
                         $checks = [
                             ['conexion_red_agua', 'redAgua', 'Conexión a red de agua'],
@@ -512,10 +535,12 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
                             $label = $c[2];
                             $on = !empty($datos[$field]);
                         ?>
-                        <div class="col-6 col-md-3">
-                            <div class="form-check form-switch p-2 rounded border bg-white">
-                                <input type="checkbox" name="<?= $field ?>" class="form-check-input" id="<?= $id ?>"<?= $chk($on) ?>>
-                                <label class="form-check-label small" for="<?= $id ?>"><?= e($label) ?></label>
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="dj-switch-cell p-3 rounded border bg-white h-100">
+                                <label class="form-label small" for="<?= e($id) ?>"><?= e($label) ?></label>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" name="<?= e($field) ?>" class="form-check-input" id="<?= e($id) ?>"<?= $chk($on) ?>>
+                                </div>
                             </div>
                         </div>
                         <?php endforeach; ?>

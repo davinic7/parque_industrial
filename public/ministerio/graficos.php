@@ -87,25 +87,10 @@ try {
     $heat_data = [];
 }
 
+$ministerio_nav = 'graficos';
+$extra_head = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'graficos';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
-
-    <main class="main-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0">Gráficos y Análisis</h1>
             <button class="btn btn-success"><i class="bi bi-download me-1"></i>Exportar PDF</button>
@@ -187,71 +172,66 @@ try {
                 </div>
             </div>
         </div>
-    </main>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<?php
+$pu = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
+$mapLat = (float) MAP_DEFAULT_LAT;
+$mapLng = (float) MAP_DEFAULT_LNG;
+$extra_scripts = '
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
-    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
+    <script src="' . $pu . '/js/parque-leaflet.js"></script>
     <script>
-        const rubrosLabels = <?= json_encode($rubros_labels, JSON_UNESCAPED_UNICODE) ?>;
-        const rubrosValues = <?= json_encode($rubros_values) ?>;
-        const empleoLabels = <?= json_encode($empleo_labels, JSON_UNESCAPED_UNICODE) ?>;
-        const empleoMasc = <?= json_encode($empleo_masc) ?>;
-        const empleoFem = <?= json_encode($empleo_fem) ?>;
-        const evolucionLabels = <?= json_encode($evolucion_labels, JSON_UNESCAPED_UNICODE) ?>;
-        const evolucionValues = <?= json_encode($evolucion_values) ?>;
-        const heatPoints = <?= json_encode($heat_data) ?>;
+        const rubrosLabels = ' . json_encode($rubros_labels, JSON_UNESCAPED_UNICODE) . ';
+        const rubrosValues = ' . json_encode($rubros_values) . ';
+        const empleoLabels = ' . json_encode($empleo_labels, JSON_UNESCAPED_UNICODE) . ';
+        const empleoMasc = ' . json_encode($empleo_masc) . ';
+        const empleoFem = ' . json_encode($empleo_fem) . ';
+        const evolucionLabels = ' . json_encode($evolucion_labels, JSON_UNESCAPED_UNICODE) . ';
+        const evolucionValues = ' . json_encode($evolucion_values) . ';
+        const heatPoints = ' . json_encode($heat_data) . ';
 
-        // Empresas por rubro
-        const ctxRubros = document.getElementById('chartRubros');
+        const ctxRubros = document.getElementById("chartRubros");
         if (ctxRubros && rubrosLabels.length) {
             new Chart(ctxRubros, {
-                type: 'doughnut',
+                type: "doughnut",
                 data: {
                     labels: rubrosLabels,
                     datasets: [{
                         data: rubrosValues,
-                        backgroundColor: ['#3498db','#e74c3c','#95a5a6','#27ae60','#f39c12','#9b59b6','#1abc9c','#34495e','#2ecc71','#bdc3c7']
+                        backgroundColor: ["#3498db","#e74c3c","#95a5a6","#27ae60","#f39c12","#9b59b6","#1abc9c","#34495e","#2ecc71","#bdc3c7"]
                     }]
                 },
-                options: {
-                    plugins: { legend: { position: 'right' } }
-                }
+                options: { plugins: { legend: { position: "right" } } }
             });
         }
 
-        // Empleo por género
-        const ctxEmp = document.getElementById('chartEmpleados');
+        const ctxEmp = document.getElementById("chartEmpleados");
         if (ctxEmp && empleoLabels.length) {
             new Chart(ctxEmp, {
-                type: 'bar',
+                type: "bar",
                 data: {
                     labels: empleoLabels,
                     datasets: [
-                        { label: 'Masculino', data: empleoMasc, backgroundColor: '#3498db' },
-                        { label: 'Femenino', data: empleoFem, backgroundColor: '#e91e63' }
+                        { label: "Masculino", data: empleoMasc, backgroundColor: "#3498db" },
+                        { label: "Femenino", data: empleoFem, backgroundColor: "#e91e63" }
                     ]
                 },
-                options: {
-                    responsive: true,
-                    scales: { x: { stacked: true }, y: { stacked: true } }
-                }
+                options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true } } }
             });
         }
 
-        // Evolución de empleo
-        const ctxEvo = document.getElementById('chartEvolucion');
+        const ctxEvo = document.getElementById("chartEvolucion");
         if (ctxEvo && evolucionLabels.length) {
             new Chart(ctxEvo, {
-                type: 'line',
+                type: "line",
                 data: {
                     labels: evolucionLabels,
                     datasets: [{
-                        label: 'Empleados declarados',
+                        label: "Empleados declarados",
                         data: evolucionValues,
-                        borderColor: '#1a5276',
-                        backgroundColor: 'rgba(26,82,118,0.1)',
+                        borderColor: "#1a5276",
+                        backgroundColor: "rgba(26,82,118,0.1)",
                         tension: 0.3,
                         fill: true
                     }]
@@ -260,10 +240,8 @@ try {
             });
         }
 
-        // Mapa de calor simple con círculos ponderados
-        const map = L.map('heatMap').setView([<?= MAP_DEFAULT_LAT ?>, <?= MAP_DEFAULT_LNG ?>], 12);
+        const map = L.map("heatMap").setView([' . $mapLat . ', ' . $mapLng . '], 12);
         ParqueLeaflet.addSatelliteLayer(map);
-
         if (heatPoints && heatPoints.length) {
             heatPoints.forEach(function(p) {
                 const lat = parseFloat(p.latitud);
@@ -273,8 +251,8 @@ try {
                     const radius = 50 + (empleados * 2);
                     L.circle([lat, lng], {
                         radius: radius,
-                        color: '#e74c3c',
-                        fillColor: '#e74c3c',
+                        color: "#e74c3c",
+                        fillColor: "#e74c3c",
                         fillOpacity: 0.4,
                         weight: 1
                     }).addTo(map);
@@ -282,5 +260,5 @@ try {
             });
         }
     </script>
-</body>
-</html>
+';
+require_once BASEPATH . '/includes/ministerio_layout_footer.php';

@@ -105,25 +105,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("empresa-editar.php?id=$emp_id");
     }
 }
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'empresas';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
+$ministerio_nav = 'empresas';
+$extra_head = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <a href="empresa-detalle.php?id=<?= $emp_id ?>" class="text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i>Volver al detalle</a>
@@ -248,32 +234,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="submit" class="btn btn-primary btn-lg"><i class="bi bi-save me-2"></i>Guardar cambios</button>
             </div>
         </form>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<?php
+$pu = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
+$lat = (float) ($empresa['latitud'] ?: MAP_DEFAULT_LAT);
+$lng = (float) ($empresa['longitud'] ?: MAP_DEFAULT_LNG);
+$zoom = ($empresa['latitud'] && $empresa['longitud']) ? 15 : 13;
+$extra_scripts = <<<HTML
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
-    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
+    <script src="{$pu}/js/parque-leaflet.js"></script>
     <script>
-        const lat = <?= (float)($empresa['latitud'] ?: MAP_DEFAULT_LAT) ?>;
-        const lng = <?= (float)($empresa['longitud'] ?: MAP_DEFAULT_LNG) ?>;
-        const zoom = <?= ($empresa['latitud'] && $empresa['longitud']) ? 15 : 13 ?>;
-
+        const lat = {$lat};
+        const lng = {$lng};
+        const zoom = {$zoom};
         const map = L.map('mapEditar').setView([lat, lng], zoom);
         ParqueLeaflet.addSatelliteLayer(map);
-
         let marker = L.marker([lat, lng], {draggable: true}).addTo(map);
-
         marker.on('dragend', function(e) {
             const pos = e.target.getLatLng();
             document.getElementById('latitud').value = pos.lat.toFixed(6);
             document.getElementById('longitud').value = pos.lng.toFixed(6);
         });
-
         map.on('click', function(e) {
             marker.setLatLng(e.latlng);
             document.getElementById('latitud').value = e.latlng.lat.toFixed(6);
             document.getElementById('longitud').value = e.latlng.lng.toFixed(6);
         });
     </script>
-</body>
-</html>
+HTML;
+require_once BASEPATH . '/includes/ministerio_layout_footer.php';

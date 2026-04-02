@@ -42,35 +42,20 @@ $notificaciones = $stmt->fetchAll();
 $stmt = $db->prepare("SELECT COUNT(*) FROM notificaciones WHERE usuario_id = ? AND leida = 0");
 $stmt->execute([$user_id]);
 $no_leidas = $stmt->fetchColumn();
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'notificaciones';
-    $ministerio_badge_notificaciones = (int)$no_leidas;
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0">Notificaciones <?php if ($no_leidas): ?><span class="badge bg-danger"><?= $no_leidas ?> sin leer</span><?php endif; ?></h1>
-            <?php if ($no_leidas > 0): ?>
+$ministerio_nav = 'notificaciones';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
+        <?php if ($no_leidas > 0): ?>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+            <span class="badge bg-danger"><?= (int) $no_leidas ?> sin leer</span>
             <form method="POST" class="d-inline">
                 <?= csrf_field() ?>
                 <input type="hidden" name="accion" value="leer_todas">
-                <button class="btn btn-outline-primary btn-sm"><i class="bi bi-check-all me-1"></i>Marcar todas como leídas</button>
+                <button class="btn btn-outline-primary btn-sm rounded-pill"><i class="bi bi-check-all me-1"></i>Marcar todas como leídas</button>
             </form>
-            <?php endif; ?>
         </div>
+        <?php endif; ?>
 
         <?php show_flash(); ?>
 
@@ -108,8 +93,5 @@ $no_leidas = $stmt->fetchColumn();
         </div>
         <?= render_pagination($pagination) ?>
         <?php endif; ?>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>

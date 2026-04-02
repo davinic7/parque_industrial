@@ -60,25 +60,9 @@ function ministerio_adjuntos_list(?string $json): array {
     return is_array($d) ? $d : [];
 }
 
+$ministerio_nav = 'mensajes_entrada';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'mensajes_entrada';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
-
-    <main class="main-content">
-        <h1 class="h3 mb-2"><i class="bi bi-inbox me-2"></i><?= e($page_title) ?></h1>
         <p class="text-muted small mb-4">Mensajes y respuestas enviados por empresas al Ministerio. Los comunicados masivos salientes siguen en «Comunicados a empresas».</p>
 
         <?php if (empty($lista)): ?>
@@ -171,8 +155,5 @@ function ministerio_adjuntos_list(?string $json): array {
             </div>
         </div>
         <?php endif; ?>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>

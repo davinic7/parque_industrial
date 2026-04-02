@@ -73,24 +73,10 @@ if ($envio_id <= 0 && $formulario_id > 0) {
     $stmt->execute([$formulario_id]);
     $ft = $stmt->fetch();
     $page_title = 'Historial de envíos';
-    ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
     $ministerio_nav = 'formularios_dinamicos';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
+    require_once BASEPATH . '/includes/ministerio_layout_header.php';
     ?>
-    <main class="main-content">
-        <h1 class="h3 mb-2">Envíos del formulario</h1>
+        <h2 class="h4 mb-2 fw-semibold">Envíos del formulario</h2>
         <p class="text-muted"><?= e($ft['titulo'] ?? '') ?></p>
         <?php show_flash(); ?>
         <a href="formularios-dinamicos.php" class="btn btn-outline-secondary btn-sm mb-3">Volver</a>
@@ -121,9 +107,8 @@ if ($envio_id <= 0 && $formulario_id > 0) {
                 </tbody>
             </table>
         </div>
-    </main>
-</body>
-</html>
+
+<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>
 <?php
     exit;
 }
@@ -186,27 +171,12 @@ $hechas = count(array_filter($filas, static fn ($r) => !empty($r['enviado_at']) 
 $pend = $total - $hechas;
 
 $page_title = 'Seguimiento de envío';
+$ministerio_nav = 'formularios_dinamicos';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'formularios_dinamicos';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
-
-    <main class="main-content">
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
             <div>
-                <h1 class="h3 mb-1">Seguimiento</h1>
+                <h2 class="h4 mb-1 fw-semibold">Seguimiento</h2>
                 <p class="text-muted mb-0"><?= e($envio['formulario_titulo']) ?></p>
                 <small class="text-muted">Envío del <?= format_datetime($envio['created_at']) ?>
                     <?php if (!empty($envio['fecha_limite'])): ?> · Límite global: <?= e($envio['fecha_limite']) ?><?php endif; ?>
@@ -287,6 +257,5 @@ $page_title = 'Seguimiento de envío';
                 </tbody>
             </table>
         </div>
-    </main>
-</body>
-</html>
+
+<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>

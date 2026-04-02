@@ -76,25 +76,11 @@ if ($table_exists && isset($_GET['editar'])) {
     $stmt->execute([$id_ed]);
     $editar = $stmt->fetch();
 }
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'banners';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
-        <h1 class="h3 mb-4"><i class="bi bi-images me-2"></i>Banners del inicio</h1>
+$ministerio_nav = 'banners';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
+        <h2 class="h4 mb-4 fw-semibold"><i class="bi bi-images me-2"></i>Banners del inicio</h2>
         <?php show_flash(); ?>
 
         <div class="card mb-4">
@@ -185,7 +171,5 @@ if ($table_exists && isset($_GET['editar'])) {
                 </table>
             </div>
         </div>
-    </main>
 
-</body>
-</html>
+<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>

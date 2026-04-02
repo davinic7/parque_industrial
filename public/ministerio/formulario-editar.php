@@ -117,26 +117,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $stmt = $db->prepare("SELECT * FROM formulario_preguntas WHERE formulario_id = ? ORDER BY orden, id");
 $stmt->execute([$form_id]);
 $preguntas_actuales = $stmt->fetchAll();
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'formularios_dinamicos';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0">Editar formulario</h1>
+$ministerio_nav = 'formularios_dinamicos';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <h2 class="h4 mb-0 fw-semibold">Editar formulario</h2>
             <a href="formularios-dinamicos.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-2"></i>Volver</a>
         </div>
 
@@ -256,7 +242,6 @@ $preguntas_actuales = $stmt->fetchAll();
                 <a href="formularios-dinamicos.php" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </form>
-    </main>
 
     <template id="preguntaTemplate">
         <div class="card mb-3 pregunta-item">
@@ -321,42 +306,46 @@ $preguntas_actuales = $stmt->fetchAll();
         </div>
     </template>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const container = document.getElementById('preguntasContainer');
-        const template  = document.getElementById('preguntaTemplate');
-        const btnAdd    = document.getElementById('btnAddPregunta');
+<?php
+$extra_scripts = <<<'JS'
+<script>
+(function() {
+    const container = document.getElementById('preguntasContainer');
+    const template = document.getElementById('preguntaTemplate');
+    const btnAdd = document.getElementById('btnAddPregunta');
+    if (!container || !template || !btnAdd) return;
 
-        function updateNames() {
-            container.querySelectorAll('.pregunta-item').forEach((item, index) => {
-                item.querySelectorAll('[data-name]').forEach(input => {
-                    input.name = input.getAttribute('data-name') + '[' + index + ']';
-                });
+    function updateNames() {
+        container.querySelectorAll('.pregunta-item').forEach((item, index) => {
+            item.querySelectorAll('[data-name]').forEach((input) => {
+                input.name = input.getAttribute('data-name') + '[' + index + ']';
             });
-        }
-
-        function toggleExtraFields(item) {
-            const tipo = item.querySelector('.pregunta-tipo').value;
-            item.querySelector('.options-container').classList.toggle('d-none', !['select','radio','checkbox'].includes(tipo));
-            item.querySelector('.table-container').classList.toggle('d-none', tipo !== 'tabla');
-            item.querySelector('.numero-container').classList.toggle('d-none', tipo !== 'numero');
-        }
-
-        function bindItem(item) {
-            item.querySelector('.pregunta-tipo').addEventListener('change', () => toggleExtraFields(item));
-            item.querySelector('.btn-remove').addEventListener('click', () => { item.remove(); updateNames(); });
-            toggleExtraFields(item);
-        }
-
-        btnAdd.addEventListener('click', () => {
-            const clone = template.content.firstElementChild.cloneNode(true);
-            container.appendChild(clone);
-            bindItem(clone);
-            updateNames();
         });
+    }
 
-        container.querySelectorAll('.pregunta-item').forEach(bindItem);
+    function toggleExtraFields(item) {
+        const tipo = item.querySelector('.pregunta-tipo').value;
+        item.querySelector('.options-container').classList.toggle('d-none', !['select','radio','checkbox'].includes(tipo));
+        item.querySelector('.table-container').classList.toggle('d-none', tipo !== 'tabla');
+        item.querySelector('.numero-container').classList.toggle('d-none', tipo !== 'numero');
+    }
+
+    function bindItem(item) {
+        item.querySelector('.pregunta-tipo').addEventListener('change', () => toggleExtraFields(item));
+        item.querySelector('.btn-remove').addEventListener('click', () => { item.remove(); updateNames(); });
+        toggleExtraFields(item);
+    }
+
+    btnAdd.addEventListener('click', () => {
+        const clone = template.content.firstElementChild.cloneNode(true);
+        container.appendChild(clone);
+        bindItem(clone);
         updateNames();
-    </script>
-</body>
-</html>
+    });
+
+    container.querySelectorAll('.pregunta-item').forEach(bindItem);
+    updateNames();
+})();
+</script>
+JS;
+require_once BASEPATH . '/includes/ministerio_layout_footer.php';

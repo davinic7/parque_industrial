@@ -81,25 +81,13 @@ foreach ($campos_perfil as $c) {
     if (!empty($empresa[$c])) $completos++;
 }
 $perfil_completo = round(($completos / count($campos_perfil)) * 100);
-?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($page_title) ?> - Ministerio</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="<?= PUBLIC_URL ?>/css/styles.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
-</head>
-<body>
-    <?php
-    $ministerio_nav = 'empresas';
-    require __DIR__ . '/../../includes/ministerio_sidebar.php';
-    ?>
 
-    <main class="main-content">
+$ministerio_nav = 'empresas';
+$extra_head = ($empresa['latitud'] && $empresa['longitud'])
+    ? '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">'
+    : '';
+require_once BASEPATH . '/includes/ministerio_layout_header.php';
+?>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <a href="empresas.php" class="text-decoration-none text-muted"><i class="bi bi-arrow-left me-1"></i>Volver</a>
@@ -326,18 +314,23 @@ $perfil_completo = round(($completos / count($campos_perfil)) * 100);
                 </div>
             </div>
         </div>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <?php if ($empresa['latitud'] && $empresa['longitud']): ?>
+<?php
+$extra_scripts = '';
+if ($empresa['latitud'] && $empresa['longitud']) {
+    $pu = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
+    $la = (float) $empresa['latitud'];
+    $lo = (float) $empresa['longitud'];
+    $popupJs = json_encode($empresa['nombre'], JSON_HEX_TAG | JSON_HEX_APOS | JSON_UNESCAPED_UNICODE);
+    $extra_scripts = <<<HTML
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
-    <script src="<?= PUBLIC_URL ?>/js/parque-leaflet.js"></script>
+    <script src="{$pu}/js/parque-leaflet.js"></script>
     <script>
-        const map = L.map('mapDetalle', { zoomControl: false }).setView([<?= (float)$empresa['latitud'] ?>, <?= (float)$empresa['longitud'] ?>], 15);
+        const map = L.map('mapDetalle', { zoomControl: false }).setView([{$la}, {$lo}], 15);
         ParqueLeaflet.addSatelliteLayer(map);
         ParqueLeaflet.freezeMap(map);
-        L.marker([<?= (float)$empresa['latitud'] ?>, <?= (float)$empresa['longitud'] ?>]).addTo(map).bindPopup('<?= e($empresa['nombre']) ?>');
+        L.marker([{$la}, {$lo}]).addTo(map).bindPopup({$popupJs});
     </script>
-    <?php endif; ?>
-</body>
-</html>
+HTML;
+}
+require_once BASEPATH . '/includes/ministerio_layout_footer.php';
