@@ -212,8 +212,9 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
             <div class="section-divider"></div>
         </div>
         
-        <div class="mapa-poligono-wrap map-container" style="height: 400px;">
-            <div id="mapaParquePolygono"></div>
+        <div class="mapa-poligono-wrap" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4316.260328892127!2d-65.80097357981687!3d-28.53371495708517!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9424297ed9062de9%3A0xab676b250c7a9379!2sParque%20Industrial%20El%20Pantanillo!5e1!3m2!1ses-419!2sar!4v1776283949669!5m2!1ses-419!2sar"
+                width="100%" height="420" style="border:0; display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
         
         <div class="text-center mt-4">
@@ -239,14 +240,6 @@ document.addEventListener("DOMContentLoaded", function() {
             data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: "#fff" }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { padding: 15, usePointStyle: true } } } }
         });
-    }
-    if (typeof L !== "undefined" && typeof ParqueLeaflet !== "undefined" && document.getElementById("mapaParquePolygono")) {
-        var centroParque = [-28.4696, -65.7795];
-        var mapParque = L.map("mapaParquePolygono", { zoomControl: false }).setView(centroParque, 15);
-        ParqueLeaflet.addSatelliteLayer(mapParque);
-        ParqueLeaflet.freezeMap(mapParque);
-        L.marker(centroParque).addTo(mapParque).bindPopup("<strong>Parque Industrial El Pantanillo</strong><br>Catamarca, Argentina");
-        setTimeout(function() { mapParque.invalidateSize(); }, 300);
     }
 });
 </script>';
