@@ -10,12 +10,16 @@ $db = getDB();
 
 // ── Datos del parque ────────────────────────────────────────────────────────
 try {
-    $stmt = $db->query("SELECT rubro, COUNT(*) as total, color FROM empresas WHERE rubro IS NOT NULL AND rubro != '' AND estado = 'activa' GROUP BY rubro, color ORDER BY total DESC");
-    $sectores = $stmt->fetchAll();
     $total_activas = (int) $db->query("SELECT COUNT(*) FROM empresas WHERE estado = 'activa'")->fetchColumn();
 } catch (Exception $e) {
-    $sectores = [];
     $total_activas = 0;
+}
+
+try {
+    $stmt = $db->query("SELECT rubro, COUNT(*) as total FROM empresas WHERE rubro IS NOT NULL AND rubro != '' AND estado = 'activa' GROUP BY rubro ORDER BY total DESC");
+    $sectores = $stmt->fetchAll();
+} catch (Exception $e) {
+    $sectores = [];
 }
 
 $stats = get_estadisticas_generales();
@@ -162,10 +166,13 @@ require_once BASEPATH . '/includes/header.php';
                 </div>
                 <div class="info-card">
                     <h5><i class="bi bi-grid me-2"></i>Sectores industriales</h5>
+                    <?php
+                    $colores_rubro = ['#3498db','#e74c3c','#27ae60','#f39c12','#9b59b6','#1abc9c','#e67e22','#95a5a6'];
+                    ?>
                     <?php if (!empty($sectores)): ?>
-                        <?php foreach ($sectores as $s): ?>
+                        <?php foreach ($sectores as $i => $s): ?>
                         <div class="sector-badge">
-                            <div class="sector-dot" style="background:<?= e($s['color'] ?? '#3498db') ?>;"></div>
+                            <div class="sector-dot" style="background:<?= $colores_rubro[$i % count($colores_rubro)] ?>;"></div>
                             <span class="sector-name"><?= e($s['rubro']) ?></span>
                             <span class="sector-count"><?= (int)$s['total'] ?> emp.</span>
                         </div>
