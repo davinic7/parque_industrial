@@ -100,6 +100,9 @@ if (!$formulario) {
                                 $errores_campos[$p['id']] = $res['error'];
                             }
                         }
+                    } elseif ($tipo === 'tabla') {
+                        $val_raw = $_POST[$campo_name] ?? null;
+                        $valor = is_array($val_raw) ? json_encode($val_raw, JSON_UNESCAPED_UNICODE) : ($val_raw ?? '');
                     } else {
                         $valor = $_POST[$campo_name] ?? null;
                         if (is_array($valor)) {
@@ -254,164 +257,209 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
                 <div class="card-body">
                     <div class="row g-3">
                         <?php foreach ($preguntas as $p):
-                            $campo_name = 'campo_' . $p['id'];
-                            $tipo = $p['tipo'];
-                            $valor = $valores_actuales[$p['id']] ?? '';
+                            $campo_name  = 'campo_' . $p['id'];
+                            $tipo        = $p['tipo'];
+                            $valor       = $valores_actuales[$p['id']] ?? '';
+                            $es_obligatorio = (bool)$p['requerido'];
+
+                            // Decodificar opciones
                             $opciones = null;
+                            $tabla_cols = [];
+                            $tabla_rows = [];
                             if (!empty($p['opciones'])) {
-                                $decoded = json_decode($p['opciones'], true);
-                                if (isset($decoded['items']) && is_array($decoded['items'])) {
-                                    $opciones = $decoded['items'];
+                                $dec = json_decode($p['opciones'], true);
+                                if (isset($dec['items'])) {
+                                    $opciones = $dec['items'];
+                                } elseif (isset($dec['cols'])) {
+                                    $tabla_cols = $dec['cols'] ?? [];
+                                    $tabla_rows = $dec['rows'] ?? [];
                                 }
                             }
-                            $es_obligatorio = (bool)$p['requerido'];
-                            $es_ubicacion = (stripos($p['etiqueta'], 'ubicacion') !== false || stripos($p['etiqueta'], 'ubicación') !== false);
+
+                            // Valores guardados de tabla (JSON string → array 2D)
+                            $tabla_vals = [];
+                            if ($tipo === 'tabla' && $valor !== '') {
+                                $tv = is_string($valor) ? json_decode($valor, true) : $valor;
+                                $tabla_vals = is_array($tv) ? $tv : [];
+                            }
                         ?>
                         <div class="col-12">
-                            <label class="form-label">
+                            <label class="form-label fw-semibold">
                                 <?= e($p['etiqueta']) ?>
-                                <?php if ($es_obligatorio): ?><span class="text-danger">*</span><?php endif; ?>
+                                <?php if ($es_obligatorio): ?><span class="text-danger ms-1">*</span><?php endif; ?>
                             </label>
                             <?php if (!empty($p['ayuda'])): ?>
                                 <div class="form-text mb-1"><?= e($p['ayuda']) ?></div>
                             <?php endif; ?>
 
-                            <?php if ($es_ubicacion): ?>
-                                <div id="mapUbicacion<?= $p['id'] ?>" style="height: 250px; border-radius: 8px;"></div>
-                                <input type="hidden"
-                                       name="<?= e($campo_name) ?>"
-                                       id="<?= e($campo_name) ?>"
-                                       value="<?= e(is_array($valor) ? '' : (string)$valor) ?>">
-                                <div class="form-text">
-                                    Haga clic en el mapa para indicar la ubicación. Se guardarán las coordenadas.
+                            <?php if ($tipo === 'texto'): ?>
+                                <input type="text" name="<?= e($campo_name) ?>" class="form-control"
+                                    maxlength="150"
+                                    value="<?= e(is_array($valor) ? '' : (string)$valor) ?>"
+                                    <?= $es_obligatorio ? 'required' : '' ?>>
+                                <div class="form-text" style="font-size:.78rem;color:#9ca3af;">Hasta 150 caracteres</div>
+
+                            <?php elseif ($tipo === 'textarea'): ?>
+                                <textarea name="<?= e($campo_name) ?>" class="form-control" rows="5"
+                                    <?= $es_obligatorio ? 'required' : '' ?>><?= e(is_array($valor) ? '' : (string)$valor) ?></textarea>
+
+                            <?php elseif ($tipo === 'numero'): ?>
+                                <?php $min = $p['min_valor'] ?? null; $max = $p['max_valor'] ?? null; ?>
+                                <input type="number" name="<?= e($campo_name) ?>" class="form-control" style="max-width:220px;"
+                                    value="<?= e(is_array($valor) ? '' : (string)$valor) ?>"
+                                    step="any"
+                                    <?= $min !== null ? 'min="' . $min . '"' : '' ?>
+                                    <?= $max !== null ? 'max="' . $max . '"' : '' ?>
+                                    <?= $es_obligatorio ? 'required' : '' ?>>
+                                <?php if ($min !== null || $max !== null): ?>
+                                <div class="form-text" style="font-size:.78rem;">
+                                    <?php if ($min !== null && $max !== null): ?>Entre <?= $min ?> y <?= $max ?>
+                                    <?php elseif ($min !== null): ?>Mínimo: <?= $min ?>
+                                    <?php else: ?>Máximo: <?= $max ?><?php endif; ?>
                                 </div>
+                                <?php endif; ?>
+
+                            <?php elseif ($tipo === 'fecha'): ?>
+                                <input type="date" name="<?= e($campo_name) ?>" class="form-control" style="max-width:200px;"
+                                    value="<?= e(is_array($valor) ? '' : (string)$valor) ?>"
+                                    <?= $es_obligatorio ? 'required' : '' ?>>
+
+                            <?php elseif ($tipo === 'email'): ?>
+                                <input type="email" name="<?= e($campo_name) ?>" class="form-control"
+                                    value="<?= e(is_array($valor) ? '' : (string)$valor) ?>"
+                                    <?= $es_obligatorio ? 'required' : '' ?>>
+
                             <?php elseif ($tipo === 'archivo'): ?>
-                                <input
-                                    type="file"
-                                    name="<?= e($campo_name) ?>"
-                                    class="form-control"
+                                <input type="file" name="<?= e($campo_name) ?>" class="form-control"
                                     accept="image/jpeg,image/png,image/webp,application/pdf"
-                                    <?= $es_obligatorio && empty($valor) ? 'required' : '' ?>
-                                >
+                                    <?= $es_obligatorio && empty($valor) ? 'required' : '' ?>>
+                                <div class="form-text" style="font-size:.78rem;">
+                                    <i class="bi bi-info-circle me-1"></i>Formatos permitidos: JPG, PNG, WEBP, PDF &nbsp;·&nbsp; Tamaño máximo: 5 MB
+                                </div>
                                 <?php if (!empty($valor)): ?>
-                                <div class="form-text">
-                                    Archivo actual:
-                                    <a href="<?= UPLOADS_URL ?>/formularios/<?= e($valor) ?>" target="_blank"><?= e($valor) ?></a>
+                                <div class="form-text mt-1">
+                                    Archivo actual: <a href="<?= UPLOADS_URL ?>/formularios/<?= e($valor) ?>" target="_blank"><?= e($valor) ?></a>
                                     — Subí uno nuevo para reemplazarlo.
                                 </div>
                                 <?php endif; ?>
-                            <?php elseif ($tipo === 'direccion'): ?>
-                                <input
-                                    type="text"
-                                    name="<?= e($campo_name) ?>"
-                                    class="form-control"
-                                    placeholder="Ej: Av. Siempre Viva 742, Catamarca"
-                                    value="<?= e(is_array($valor) ? '' : (string)$valor) ?>"
-                                    <?= $es_obligatorio ? 'required' : '' ?>
-                                >
-                            <?php elseif ($tipo === 'numero'): ?>
-                                <input
-                                    type="number"
-                                    name="<?= e($campo_name) ?>"
-                                    class="form-control"
-                                    value="<?= e(is_array($valor) ? '' : (string)$valor) ?>"
-                                    <?= $es_obligatorio ? 'required' : '' ?>
-                                    <?= $p['min_valor'] !== null ? 'min="' . $p['min_valor'] . '"' : '' ?>
-                                    <?= $p['max_valor'] !== null ? 'max="' . $p['max_valor'] . '"' : '' ?>
-                                    step="any"
-                                >
-                                <?php if ($p['min_valor'] !== null || $p['max_valor'] !== null): ?>
-                                <div class="form-text">
-                                    <?php if ($p['min_valor'] !== null && $p['max_valor'] !== null): ?>
-                                        Valor entre <?= $p['min_valor'] ?> y <?= $p['max_valor'] ?>
-                                    <?php elseif ($p['min_valor'] !== null): ?>
-                                        Valor mínimo: <?= $p['min_valor'] ?>
-                                    <?php else: ?>
-                                        Valor máximo: <?= $p['max_valor'] ?>
-                                    <?php endif; ?>
-                                </div>
-                                <?php endif; ?>
-                            <?php elseif ($tipo === 'texto' || $tipo === 'fecha' || $tipo === 'email'): ?>
-                                <input
-                                    type="<?= $tipo === 'texto' ? 'text' : ($tipo === 'fecha' ? 'date' : 'email') ?>"
-                                    name="<?= e($campo_name) ?>"
-                                    class="form-control"
-                                    value="<?= e(is_array($valor) ? '' : (string)$valor) ?>"
-                                    <?= $es_obligatorio ? 'required' : '' ?>
-                                >
-                            <?php elseif ($tipo === 'textarea'): ?>
-                                <textarea
-                                    name="<?= e($campo_name) ?>"
-                                    class="form-control"
-                                    rows="4"
-                                    <?= $es_obligatorio ? 'required' : '' ?>
-                                ><?= e(is_array($valor) ? '' : (string)$valor) ?></textarea>
+
                             <?php elseif ($tipo === 'select' && $opciones): ?>
-                                <select
-                                    name="<?= e($campo_name) ?>"
-                                    class="form-select"
-                                    <?= $es_obligatorio ? 'required' : '' ?>
-                                >
+                                <select name="<?= e($campo_name) ?>" class="form-select" <?= $es_obligatorio ? 'required' : '' ?>>
                                     <option value="">Seleccione...</option>
                                     <?php foreach ($opciones as $opt): ?>
-                                        <option value="<?= e($opt) ?>" <?= (string)$valor === (string)$opt ? 'selected' : '' ?>><?= e($opt) ?></option>
+                                    <option value="<?= e($opt) ?>" <?= (string)$valor === (string)$opt ? 'selected' : '' ?>><?= e($opt) ?></option>
                                     <?php endforeach; ?>
                                 </select>
+
                             <?php elseif ($tipo === 'radio' && $opciones): ?>
                                 <div class="d-flex flex-wrap gap-3">
                                     <?php foreach ($opciones as $opt): ?>
                                     <div class="form-check">
-                                        <input
-                                            class="form-check-input"
-                                            type="radio"
+                                        <input class="form-check-input" type="radio"
                                             name="<?= e($campo_name) ?>"
                                             id="<?= e($campo_name . '_' . md5($opt)) ?>"
                                             value="<?= e($opt) ?>"
                                             <?= (string)$valor === (string)$opt ? 'checked' : '' ?>
-                                            <?= $es_obligatorio ? 'required' : '' ?>
-                                        >
+                                            <?= $es_obligatorio ? 'required' : '' ?>>
                                         <label class="form-check-label" for="<?= e($campo_name . '_' . md5($opt)) ?>"><?= e($opt) ?></label>
                                     </div>
                                     <?php endforeach; ?>
                                 </div>
+
                             <?php elseif ($tipo === 'checkbox' && $opciones): ?>
                                 <?php $vals = is_array($valor) ? $valor : []; ?>
                                 <div class="d-flex flex-wrap gap-3">
                                     <?php foreach ($opciones as $opt): ?>
                                     <div class="form-check">
-                                        <input
-                                            class="form-check-input"
-                                            type="checkbox"
+                                        <input class="form-check-input" type="checkbox"
                                             name="<?= e($campo_name) ?>[]"
                                             id="<?= e($campo_name . '_' . md5($opt)) ?>"
                                             value="<?= e($opt) ?>"
-                                            <?= in_array($opt, $vals, true) ? 'checked' : '' ?>
-                                        >
+                                            <?= in_array($opt, $vals, true) ? 'checked' : '' ?>>
                                         <label class="form-check-label" for="<?= e($campo_name . '_' . md5($opt)) ?>"><?= e($opt) ?></label>
                                     </div>
                                     <?php endforeach; ?>
                                 </div>
+
                             <?php elseif ($tipo === 'checkbox' && !$opciones): ?>
                                 <div class="form-check">
-                                    <input
-                                        class="form-check-input"
-                                        type="checkbox"
-                                        name="<?= e($campo_name) ?>"
-                                        id="<?= e($campo_name) ?>"
-                                        value="1"
-                                        <?= !empty($valor) ? 'checked' : '' ?>
-                                        <?= $es_obligatorio ? 'required' : '' ?>
-                                    >
+                                    <input class="form-check-input" type="checkbox"
+                                        name="<?= e($campo_name) ?>" id="<?= e($campo_name) ?>"
+                                        value="1" <?= !empty($valor) ? 'checked' : '' ?>
+                                        <?= $es_obligatorio ? 'required' : '' ?>>
                                     <label class="form-check-label" for="<?= e($campo_name) ?>">Sí</label>
                                 </div>
+
+                            <?php elseif ($tipo === 'tabla' && !empty($tabla_cols) && !empty($tabla_rows)): ?>
+                                <div class="table-responsive mt-1">
+                                    <table class="table table-bordered table-sm align-middle" style="min-width:400px;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:140px;"></th>
+                                                <?php foreach ($tabla_cols as $col): ?>
+                                                <th class="text-center fw-semibold"><?= e($col) ?></th>
+                                                <?php endforeach; ?>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($tabla_rows as $ri => $row): ?>
+                                            <tr>
+                                                <td class="fw-semibold text-nowrap bg-light"><?= e($row) ?></td>
+                                                <?php foreach ($tabla_cols as $ci => $col): ?>
+                                                <td>
+                                                    <input type="text"
+                                                        name="<?= e($campo_name) ?>[<?= $ri ?>][<?= $ci ?>]"
+                                                        class="form-control form-control-sm"
+                                                        value="<?= e($tabla_vals[$ri][$ci] ?? '') ?>">
+                                                </td>
+                                                <?php endforeach; ?>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                            <?php elseif ($tipo === 'direccion'): ?>
+                                <?php
+                                $dir_lat = ''; $dir_lng = '';
+                                $dir_val = is_array($valor) ? '' : (string)$valor;
+                                if (str_contains($dir_val, ',')) {
+                                    [$dir_lat, $dir_lng] = explode(',', $dir_val, 2);
+                                }
+                                ?>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-sm-4">
+                                        <label class="form-label small text-muted mb-1">Latitud</label>
+                                        <input type="number" id="dir_lat_<?= $p['id'] ?>" class="form-control form-control-sm"
+                                            step="any" placeholder="-28.5337" value="<?= e(trim($dir_lat)) ?>">
+                                    </div>
+                                    <div class="col-sm-4">
+                                        <label class="form-label small text-muted mb-1">Longitud</label>
+                                        <input type="number" id="dir_lng_<?= $p['id'] ?>" class="form-control form-control-sm"
+                                            step="any" placeholder="-65.8010" value="<?= e(trim($dir_lng)) ?>">
+                                    </div>
+                                    <div class="col-sm-4 d-flex align-items-end">
+                                        <button type="button" class="btn btn-sm btn-outline-primary w-100"
+                                            onclick="dirActualizarMapa(<?= $p['id'] ?>)">
+                                            <i class="bi bi-search me-1"></i>Ir a coordenadas
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="mapDir<?= $p['id'] ?>" style="height:240px;border-radius:8px;border:1px solid #dee2e6;"></div>
+                                <input type="hidden" name="<?= e($campo_name) ?>" id="<?= e($campo_name) ?>"
+                                    value="<?= e($dir_val) ?>" <?= $es_obligatorio ? 'required' : '' ?>>
+                                <div class="form-text" style="font-size:.78rem;"><i class="bi bi-cursor me-1"></i>Clic en el mapa o ingresá las coordenadas manualmente</div>
+
+                            <?php elseif ($tipo === 'ubicacion' || stripos($p['etiqueta'], 'ubicacion') !== false || stripos($p['etiqueta'], 'ubicación') !== false): ?>
+                                <div id="mapUbicacion<?= $p['id'] ?>" style="height:250px;border-radius:8px;"></div>
+                                <input type="hidden" name="<?= e($campo_name) ?>" id="<?= e($campo_name) ?>"
+                                    value="<?= e(is_array($valor) ? '' : (string)$valor) ?>">
+                                <div class="form-text"><i class="bi bi-cursor me-1"></i>Haga clic en el mapa para indicar la ubicación.</div>
+
                             <?php else: ?>
-                                <input
-                                    type="text"
-                                    name="<?= e($campo_name) ?>"
-                                    class="form-control"
+                                <input type="text" name="<?= e($campo_name) ?>" class="form-control"
                                     value="<?= e(is_array($valor) ? '' : (string)$valor) ?>"
-                                    <?= $es_obligatorio ? 'required' : '' ?>
-                                >
+                                    <?= $es_obligatorio ? 'required' : '' ?>>
                             <?php endif; ?>
                         </div>
                         <?php endforeach; ?>
@@ -437,15 +485,92 @@ $puJs = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
     <script src="<?= $puJs ?>/js/parque-leaflet.js"></script>
     <script>
+    // Mapa de instancias para campos direccion (accedido por dirActualizarMapa)
+    var _dirMaps = {};
+
+    function dirActualizarMapa(id) {
+        var latInput = document.getElementById('dir_lat_' + id);
+        var lngInput = document.getElementById('dir_lng_' + id);
+        var mapInst = _dirMaps[id];
+        if (!latInput || !lngInput || !mapInst) return;
+        var lat = parseFloat(latInput.value);
+        var lng = parseFloat(lngInput.value);
+        if (isNaN(lat) || isNaN(lng)) return;
+        mapInst.map.setView([lat, lng], 16);
+        if (mapInst.marker) mapInst.map.removeLayer(mapInst.marker);
+        mapInst.marker = L.marker([lat, lng]).addTo(mapInst.map);
+        var hidden = document.getElementById('campo_' + id);
+        if (hidden) hidden.value = lat.toFixed(8) + ',' + lng.toFixed(8);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         <?php if (!empty($preguntas)): ?>
         <?php foreach ($preguntas as $p):
             $campo_name = 'campo_' . $p['id'];
+            $tipo_p = strtolower(trim($p['tipo'] ?? ''));
             $es_ubicacion = (stripos($p['etiqueta'], 'ubicacion') !== false || stripos($p['etiqueta'], 'ubicación') !== false);
-            if (!$es_ubicacion) {
+            $es_direccion = ($tipo_p === 'direccion');
+            if (!$es_ubicacion && !$es_direccion) {
                 continue;
             }
         ?>
+        <?php if ($es_direccion): ?>
+        (function() {
+            var pid = <?= (int) $p['id'] ?>;
+            var latInput = document.getElementById('dir_lat_' + pid);
+            var lngInput = document.getElementById('dir_lng_' + pid);
+            var mapEl   = document.getElementById('mapDir' + pid);
+            var hidden  = document.getElementById('<?= e($campo_name) ?>');
+            if (!latInput || !lngInput || !mapEl || !hidden) return;
+
+            var defLat = <?= (float) MAP_DEFAULT_LAT ?>;
+            var defLng = <?= (float) MAP_DEFAULT_LNG ?>;
+            var initLat = defLat, initLng = defLng, hasVal = false;
+
+            if (hidden.value && hidden.value.includes(',')) {
+                var parts = hidden.value.split(',');
+                var lp = parseFloat(parts[0]), lgp = parseFloat(parts[1]);
+                if (!isNaN(lp) && !isNaN(lgp)) {
+                    initLat = lp; initLng = lgp;
+                    latInput.value = lp.toFixed(6);
+                    lngInput.value = lgp.toFixed(6);
+                    hasVal = true;
+                }
+            }
+
+            var map = L.map(mapEl).setView([initLat, initLng], hasVal ? 16 : 14);
+            ParqueLeaflet.addSatelliteLayer(map);
+            ParqueLeaflet.addParquePolygon(map);
+
+            var marker = null;
+            if (hasVal) {
+                marker = L.marker([initLat, initLng], {draggable: true}).addTo(map);
+                marker.on('dragend', function(ev) {
+                    var pos = ev.target.getLatLng();
+                    latInput.value = pos.lat.toFixed(6);
+                    lngInput.value = pos.lng.toFixed(6);
+                    hidden.value = pos.lat.toFixed(8) + ',' + pos.lng.toFixed(8);
+                });
+            }
+
+            _dirMaps[pid] = { map: map, marker: marker };
+
+            map.on('click', function(ev) {
+                if (_dirMaps[pid].marker) map.removeLayer(_dirMaps[pid].marker);
+                var m = L.marker(ev.latlng, {draggable: true}).addTo(map);
+                m.on('dragend', function(de) {
+                    var pos = de.target.getLatLng();
+                    latInput.value = pos.lat.toFixed(6);
+                    lngInput.value = pos.lng.toFixed(6);
+                    hidden.value = pos.lat.toFixed(8) + ',' + pos.lng.toFixed(8);
+                });
+                _dirMaps[pid].marker = m;
+                latInput.value = ev.latlng.lat.toFixed(6);
+                lngInput.value = ev.latlng.lng.toFixed(6);
+                hidden.value = ev.latlng.lat.toFixed(8) + ',' + ev.latlng.lng.toFixed(8);
+            });
+        })();
+        <?php else: ?>
         (function() {
             const input = document.getElementById('<?= e($campo_name) ?>');
             const mapEl = document.getElementById('mapUbicacion<?= (int) $p['id'] ?>');
@@ -481,6 +606,7 @@ $puJs = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
                 input.value = latStr + ',' + lngStr;
             });
         })();
+        <?php endif; ?>
         <?php endforeach; ?>
         <?php endif; ?>
     });

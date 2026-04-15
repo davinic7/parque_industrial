@@ -63,12 +63,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $max_valor = $tipo === 'numero' && ($max_post[$i] ?? '') !== '' ? (float)$max_post[$i] : null;
 
                     if (in_array($tipo, ['select', 'radio', 'checkbox'], true)) {
-                        $items = array_values(array_filter(array_map('trim', explode(',', $opc_post[$i] ?? ''))));
+                        $raw = str_replace("\r\n", "\n", $opc_post[$i] ?? '');
+                        $items = array_values(array_filter(array_map('trim', explode("\n", $raw))));
                         if (empty($items)) throw new Exception("Debe ingresar opciones para la pregunta \"$label\".");
                         $opciones = json_encode(['items' => $items], JSON_UNESCAPED_UNICODE);
                     } elseif ($tipo === 'tabla') {
-                        $cols = array_values(array_filter(array_map('trim', explode(',', $cols_post[$i] ?? ''))));
-                        $rows = array_values(array_filter(array_map('trim', explode(',', $rows_post[$i] ?? ''))));
+                        $rawC = str_replace("\r\n", "\n", $cols_post[$i] ?? '');
+                        $rawR = str_replace("\r\n", "\n", $rows_post[$i] ?? '');
+                        $cols = array_values(array_filter(array_map('trim', explode("\n", $rawC))));
+                        $rows = array_values(array_filter(array_map('trim', explode("\n", $rawR))));
                         if (empty($cols) || empty($rows)) throw new Exception("Debe ingresar columnas y filas para la tabla \"$label\".");
                         $opciones = json_encode(['cols' => $cols, 'rows' => $rows], JSON_UNESCAPED_UNICODE);
                     }
@@ -175,19 +178,19 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                             </div>
 
                             <div class="col-12 options-container d-none">
-                                <label class="form-label">Opciones (separadas por coma)</label>
-                                <input type="text" class="form-control" data-name="pregunta_opciones" value="<?= e($post_opc[$idx] ?? '') ?>">
+                                <label class="form-label">Opciones <small class="text-muted">(una por línea)</small></label>
+                                <textarea class="form-control" data-name="pregunta_opciones" rows="4" placeholder="Opción 1&#10;Opción 2&#10;Opción 3"><?= e($post_opc[$idx] ?? '') ?></textarea>
                             </div>
 
                             <div class="col-12 table-container d-none">
                                 <div class="row g-2">
                                     <div class="col-md-6">
-                                        <label class="form-label">Columnas (separadas por coma)</label>
-                                        <input type="text" class="form-control" data-name="pregunta_tabla_cols" value="<?= e($post_cols[$idx] ?? '') ?>">
+                                        <label class="form-label">Columnas <small class="text-muted">(una por línea)</small></label>
+                                        <textarea class="form-control" data-name="pregunta_tabla_cols" rows="4" placeholder="Columna A&#10;Columna B"><?= e($post_cols[$idx] ?? '') ?></textarea>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Filas (separadas por coma)</label>
-                                        <input type="text" class="form-control" data-name="pregunta_tabla_rows" value="<?= e($post_rows[$idx] ?? '') ?>">
+                                        <label class="form-label">Filas <small class="text-muted">(una por línea)</small></label>
+                                        <textarea class="form-control" data-name="pregunta_tabla_rows" rows="4" placeholder="Fila 1&#10;Fila 2"><?= e($post_rows[$idx] ?? '') ?></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -249,19 +252,19 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                     </div>
 
                     <div class="col-12 options-container d-none">
-                        <label class="form-label">Opciones (separadas por coma)</label>
-                        <input type="text" class="form-control" data-name="pregunta_opciones">
+                        <label class="form-label">Opciones <small class="text-muted">(una por línea)</small></label>
+                        <textarea class="form-control" data-name="pregunta_opciones" rows="4" placeholder="Opción 1&#10;Opción 2&#10;Opción 3"></textarea>
                     </div>
 
                     <div class="col-12 table-container d-none">
                         <div class="row g-2">
                             <div class="col-md-6">
-                                <label class="form-label">Columnas (separadas por coma)</label>
-                                <input type="text" class="form-control" data-name="pregunta_tabla_cols">
+                                <label class="form-label">Columnas <small class="text-muted">(una por línea)</small></label>
+                                <textarea class="form-control" data-name="pregunta_tabla_cols" rows="4" placeholder="Columna A&#10;Columna B"></textarea>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Filas (separadas por coma)</label>
-                                <input type="text" class="form-control" data-name="pregunta_tabla_rows">
+                                <label class="form-label">Filas <small class="text-muted">(una por línea)</small></label>
+                                <textarea class="form-control" data-name="pregunta_tabla_rows" rows="4" placeholder="Fila 1&#10;Fila 2"></textarea>
                             </div>
                         </div>
                     </div>
