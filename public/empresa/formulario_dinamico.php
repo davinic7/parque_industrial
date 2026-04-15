@@ -466,6 +466,7 @@ $puJs = htmlspecialchars(PUBLIC_URL, ENT_QUOTES, 'UTF-8');
 
             const map = L.map(mapEl).setView([lat, lng], 14);
             ParqueLeaflet.addSatelliteLayer(map);
+            ParqueLeaflet.addParquePolygon(map);
 
             let marker = null;
             if (input.value && input.value.includes(',')) {

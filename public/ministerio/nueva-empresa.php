@@ -312,6 +312,7 @@ $extra_scripts = <<<HTML
     <script>
         const map = L.map('mapNueva').setView([{$mlat}, {$mlng}], {$mzoom});
         ParqueLeaflet.addSatelliteLayer(map);
+        ParqueLeaflet.addParquePolygon(map);
         let marker = null;
         map.on('click', function(e) {
             if (marker) {

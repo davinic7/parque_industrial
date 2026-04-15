@@ -456,6 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const lng = <?= (float)($empresa['longitud'] ?? MAP_DEFAULT_LNG) ?>;
     const map = L.map('empresaMap', { zoomControl: true }).setView([lat, lng], 15);
     ParqueLeaflet.addSatelliteLayer(map);
+    ParqueLeaflet.addParquePolygon(map);
     ParqueLeaflet.freezeMap(map);
     L.marker([lat, lng])
         .addTo(map)

@@ -249,6 +249,7 @@ $extra_scripts = <<<HTML
         const zoom = {$zoom};
         const map = L.map('mapEditar').setView([lat, lng], zoom);
         ParqueLeaflet.addSatelliteLayer(map);
+        ParqueLeaflet.addParquePolygon(map);
         let marker = L.marker([lat, lng], {draggable: true}).addTo(map);
         marker.on('dragend', function(e) {
             const pos = e.target.getLatLng();
