@@ -8,8 +8,13 @@ $page_title = 'Mapa del Parque';
 
 try {
     $db = getDB();
-    $stmt = $db->query("SELECT id, nombre, rubro, ubicacion, direccion, telefono, contacto_nombre, latitud, longitud FROM empresas ORDER BY nombre");
+    $stmt = $db->query("SELECT id, nombre, rubro, ubicacion, direccion, telefono, contacto_nombre, latitud, longitud, logo, sitio_web, facebook, instagram, linkedin FROM empresas ORDER BY nombre");
     $empresas = $stmt->fetchAll();
+    // Resolver URL del logo para cada empresa
+    foreach ($empresas as &$emp) {
+        $emp['logo_url'] = !empty($emp['logo']) ? uploads_resolve_url($emp['logo'], 'logos') : '';
+    }
+    unset($emp);
     
     // Estadísticas
     $total = count($empresas);
@@ -163,17 +168,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 iconAnchor: [10, 10]
             });
             
+            const logoHtml = emp.logo_url
+                ? `<img src="${emp.logo_url}" alt="${emp.nombre}" style="width:52px;height:52px;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;padding:3px;">`
+                : `<div style="width:52px;height:52px;border-radius:8px;border:1px solid #e5e7eb;background:#f0f4f8;display:flex;align-items:center;justify-content:center;"><i class="bi bi-building" style="font-size:1.4rem;color:#94a3b8;"></i></div>`;
+
+            const redesHtml = (() => {
+                const links = [];
+                if (emp.facebook)  links.push(`<a href="${emp.facebook}" target="_blank" rel="noopener" title="Facebook" style="color:#1877f2;font-size:1.15rem;"><i class="bi bi-facebook"></i></a>`);
+                if (emp.instagram) links.push(`<a href="${emp.instagram}" target="_blank" rel="noopener" title="Instagram" style="color:#e1306c;font-size:1.15rem;"><i class="bi bi-instagram"></i></a>`);
+                if (emp.linkedin)  links.push(`<a href="${emp.linkedin}" target="_blank" rel="noopener" title="LinkedIn" style="color:#0a66c2;font-size:1.15rem;"><i class="bi bi-linkedin"></i></a>`);
+                if (emp.sitio_web) links.push(`<a href="${emp.sitio_web}" target="_blank" rel="noopener" title="Sitio web" style="color:#6b7280;font-size:1.15rem;"><i class="bi bi-globe2"></i></a>`);
+                return links.length ? `<div style="display:flex;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">${links.join('')}</div>` : '';
+            })();
+
             const marker = L.marker([emp.latitud, emp.longitud], { icon: icon })
                 .addTo(map)
                 .bindPopup(`
-                    <div style="min-width: 200px;">
-                        <h6 style="margin: 0 0 8px; color: #1a5276;">${emp.nombre}</h6>
-                        <p style="margin: 4px 0; font-size: 0.85rem;"><strong>Rubro:</strong> ${emp.rubro || 'N/A'}</p>
-                        <p style="margin: 4px 0; font-size: 0.85rem;"><strong>Ubicación:</strong> ${emp.ubicacion || 'N/A'}</p>
-                        ${emp.telefono ? `<p style="margin: 4px 0; font-size: 0.85rem;"><strong>Tel:</strong> ${emp.telefono}</p>` : ''}
-                        <a href="empresa.php?id=${emp.id}" class="btn btn-sm btn-primary mt-2" style="font-size: 0.75rem;">Ver perfil</a>
+                    <div style="min-width:230px;max-width:270px;font-family:inherit;">
+                        <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
+                            ${logoHtml}
+                            <div style="min-width:0;">
+                                <div style="font-weight:700;font-size:.95rem;color:#1a5276;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${emp.nombre}</div>
+                                <div style="font-size:.75rem;color:#64748b;margin-top:2px;">${emp.rubro || ''}</div>
+                            </div>
+                        </div>
+                        <div style="font-size:.82rem;color:#374151;display:flex;flex-direction:column;gap:4px;">
+                            ${emp.ubicacion ? `<div><i class="bi bi-geo-alt" style="color:#6b7280;margin-right:4px;"></i>${emp.ubicacion}</div>` : ''}
+                            ${emp.telefono  ? `<div><i class="bi bi-telephone" style="color:#6b7280;margin-right:4px;"></i>${emp.telefono}</div>` : ''}
+                        </div>
+                        ${redesHtml}
+                        <a href="empresa.php?id=${emp.id}" style="display:block;margin-top:10px;padding:6px 0;background:#1a5276;color:#fff;text-align:center;border-radius:6px;font-size:.8rem;font-weight:600;text-decoration:none;">Ver perfil</a>
                     </div>
-                `);
+                `, { maxWidth: 290 });
             
             markers[emp.id] = marker;
         }
