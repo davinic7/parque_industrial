@@ -22,10 +22,11 @@ $meta_descriptions = [
     'mapa' => 'Mapa interactivo del Parque Industrial de Catamarca. Ubicación de empresas y sectores del parque.',
     'estadisticas' => 'Estadísticas del Parque Industrial de Catamarca: empresas, empleados, sectores y huella de carbono.',
     'noticias' => 'Noticias, eventos y publicaciones del Parque Industrial de Catamarca.',
-    'nosotros' => 'Sobre el Parque Industrial de Catamarca. Ministerio de Producción e Industria. Información institucional.',
+    'nosotros'  => 'Sobre el Parque Industrial de Catamarca. Ministerio de Producción e Industria. Información institucional.',
+    'el-parque' => 'Parque Industrial El Pantanillo (Catamarca): ubicación, sectores, infraestructura y contacto institucional.',
     'empresa' => 'Perfil de empresa del Parque Industrial de Catamarca: datos de contacto y actividad.',
     'publicacion' => 'Publicación del Parque Industrial de Catamarca.',
-    'parque' => 'Parque Industrial El Pantanillo: ubicación, sectores y empresas radicadas en Catamarca.',
+    'parque'    => 'Parque Industrial El Pantanillo: ubicación, sectores y empresas radicadas en Catamarca.',
     'presentar-proyecto' => 'Presentá tu proyecto industrial ante el Parque Industrial de Catamarca.',
     'recuperar' => 'Recuperación de contraseña del portal Parque Industrial de Catamarca.',
     'activar-cuenta' => 'Activación de cuenta de empresa en el portal Parque Industrial de Catamarca.',
@@ -114,9 +115,8 @@ if ($current_page !== 'index') {
             $breadcrumb_flat[] = ['label' => truncate($pub_row['titulo'] ?? 'Publicación', 72), 'url' => ''];
             break;
         case 'nosotros':
-            $breadcrumb_flat[] = ['label' => 'Nosotros', 'url' => ''];
-            break;
         case 'parque':
+        case 'el-parque':
             $breadcrumb_flat[] = ['label' => 'El Parque Industrial', 'url' => ''];
             break;
         case 'presentar-proyecto':
@@ -231,7 +231,7 @@ if ($current_page !== 'index') {
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= $current_page === 'parque' ? 'active' : '' ?>" href="<?= PUBLIC_URL ?>/parque.php">
+                        <a class="nav-link <?= in_array($current_page, ['el-parque','parque','nosotros']) ? 'active' : '' ?>" href="<?= PUBLIC_URL ?>/el-parque.php">
                             <i class="bi bi-geo"></i> El Parque
                         </a>
                     </li>
@@ -243,11 +243,6 @@ if ($current_page !== 'index') {
                     <li class="nav-item">
                         <a class="nav-link <?= $current_page === 'noticias' || $current_page === 'publicacion' ? 'active' : '' ?>" href="<?= PUBLIC_URL ?>/noticias.php">
                             <i class="bi bi-newspaper"></i> Noticias
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?= $current_page === 'nosotros' ? 'active' : '' ?>" href="<?= PUBLIC_URL ?>/nosotros.php">
-                            <i class="bi bi-info-circle"></i> Nosotros
                         </a>
                     </li>
                     <li class="nav-item">
