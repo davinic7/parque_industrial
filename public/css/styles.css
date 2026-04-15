@@ -350,6 +350,13 @@ img { max-width: 100%; height: auto; }
 .rounded-lg { border-radius: var(--radius-lg)!important; }
 
 /* Responsive */
+/* Rango lg: navbar expandido pero ajustado (~992px–1199px, ej. PCs Amazon de 1032px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .navbar-main .navbar-brand span { font-size: 0.9rem; }
+    .navbar-main .navbar-brand img { height: 36px; }
+    .navbar-main .nav-link { padding: 1rem 0.55rem!important; font-size: 0.85rem; }
+    .navbar-main .btn-login { padding: 8px 14px!important; }
+}
 @media (max-width: 991px) {
     .sidebar { transform: translateX(-100%); transition: 0.3s; }
     .sidebar.show { transform: translateX(0); }
