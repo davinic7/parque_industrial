@@ -266,6 +266,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Polígono del Parque Industrial El Pantanillo (OSM way/37355935)
+    ParqueLeaflet.addParquePolygon(map);
+
     // Colorear dots de la lista y construir leyenda
     const rubrosSeen = {};
     document.querySelectorAll('.empresa-list-dot').forEach(dot => {
