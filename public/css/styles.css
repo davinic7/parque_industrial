@@ -350,6 +350,19 @@ img { max-width: 100%; height: auto; }
 .rounded-lg { border-radius: var(--radius-lg)!important; }
 
 /* Responsive */
+/* Tooltip polígono parque */
+.leaflet-pi-tooltip {
+    background: rgba(26,82,118,.9);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: .8rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.2);
+}
+.leaflet-pi-tooltip::before { border-top-color: rgba(26,82,118,.9); }
+
 /* Rango lg: navbar expandido pero ajustado (~992px–1199px, ej. PCs Amazon de 1032px) */
 @media (min-width: 992px) and (max-width: 1199px) {
     .navbar-main .navbar-brand span { font-size: 0.9rem; }

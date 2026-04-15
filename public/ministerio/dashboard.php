@@ -179,10 +179,10 @@ $extra_scripts = <<<HTML
             },
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
-        const map = L.map('miniMap', { zoomControl: false }).setView([{$lat}, {$lng}], 13);
+        const map = L.map('miniMap', { zoomControl: false }).setView([-28.5337, -65.8010], 14);
         ParqueLeaflet.addSatelliteLayer(map);
+        ParqueLeaflet.addParquePolygon(map);
         ParqueLeaflet.freezeMap(map);
-        L.marker([{$lat}, {$lng}]).addTo(map).bindPopup('Parque Industrial');
     </script>
 HTML;
 require_once BASEPATH . '/includes/ministerio_layout_footer.php';
