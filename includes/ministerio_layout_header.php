@@ -81,15 +81,21 @@ $mn = static function (string $key) use ($ministerio_nav): string {
         <nav class="empresa-sidebar-nav">
             <a href="dashboard.php" class="<?= $mn('dashboard') ?>"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
 
-            <div class="empresa-sidebar-section">Gestión de empresas</div>
-            <a href="empresas.php" class="<?= $mn('empresas') ?>"><i class="fa-solid fa-buildings"></i> Empresas</a>
+            <div class="empresa-sidebar-section">Empresas</div>
+            <a href="empresas.php" class="<?= $mn('empresas') ?>"><i class="fa-solid fa-buildings"></i> Ver empresas</a>
             <a href="nueva-empresa.php" class="<?= $mn('nueva_empresa') ?>"><i class="fa-solid fa-user-plus"></i> Nueva empresa</a>
+
+            <div class="empresa-sidebar-section">Formularios</div>
             <a href="formularios.php" class="<?= $mn('formularios') ?>"><i class="fa-solid fa-file-lines"></i> Formularios de datos</a>
             <a href="formularios-dinamicos.php" class="<?= $mn('formularios_dinamicos') ?>"><i class="fa-solid fa-list-check"></i> Formularios dinámicos</a>
+
+            <div class="empresa-sidebar-section">Comunicación</div>
+            <a href="mensajes-entrada.php" class="<?= $mn('mensajes_entrada') ?>"><i class="fa-solid fa-inbox"></i> Mensajes<?php if ($badge_inbox > 0): ?> <span class="badge bg-danger rounded-pill"><?= $badge_inbox > 99 ? '99+' : $badge_inbox ?></span><?php endif; ?></a>
             <a href="comunicados.php" class="<?= $mn('comunicados') ?>"><i class="fa-solid fa-paper-plane"></i> Comunicados</a>
-            <a href="mensajes-entrada.php" class="<?= $mn('mensajes_entrada') ?>"><i class="fa-solid fa-inbox"></i> Mensajes de empresas<?php if ($badge_inbox > 0): ?> <span class="badge bg-danger rounded-pill"><?= $badge_inbox > 99 ? '99+' : $badge_inbox ?></span><?php endif; ?></a>
-            <a href="solicitudes-proyecto.php" class="<?= $mn('solicitudes') ?>"><i class="fa-solid fa-folder-open"></i> Solicitudes proyecto<?php if ($ministerio_badge_solicitudes > 0): ?> <span class="badge bg-warning text-dark rounded-pill"><?= $ministerio_badge_solicitudes > 99 ? '99+' : $ministerio_badge_solicitudes ?></span><?php endif; ?></a>
-            <a href="graficos.php" class="<?= $mn('graficos') ?>"><i class="fa-solid fa-chart-line"></i> Gráficos y datos</a>
+            <a href="solicitudes-proyecto.php" class="<?= $mn('solicitudes') ?>"><i class="fa-solid fa-folder-open"></i> Solicitudes<?php if ($ministerio_badge_solicitudes > 0): ?> <span class="badge bg-warning text-dark rounded-pill"><?= $ministerio_badge_solicitudes > 99 ? '99+' : $ministerio_badge_solicitudes ?></span><?php endif; ?></a>
+
+            <div class="empresa-sidebar-section">Datos</div>
+            <a href="graficos.php" class="<?= $mn('graficos') ?>"><i class="fa-solid fa-chart-line"></i> Gráficos y análisis</a>
             <a href="exportar.php" class="<?= $mn('exportar') ?>"><i class="fa-solid fa-download"></i> Exportar datos</a>
 
             <div class="empresa-sidebar-section">Sitio público</div>
