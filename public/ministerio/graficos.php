@@ -242,6 +242,7 @@ $extra_scripts = '
 
         const map = L.map("heatMap").setView([' . $mapLat . ', ' . $mapLng . '], 12);
         ParqueLeaflet.addSatelliteLayer(map);
+        ParqueLeaflet.addParquePolygon(map);
         if (heatPoints && heatPoints.length) {
             heatPoints.forEach(function(p) {
                 const lat = parseFloat(p.latitud);

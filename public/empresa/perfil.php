@@ -530,6 +530,7 @@ $extra_scripts = <<<HTML
                 const ll = getPair();
                 previewMap = L.map('mapPreview', { zoomControl: false }).setView(ll, 16);
                 ParqueLeaflet.addSatelliteLayer(previewMap);
+                ParqueLeaflet.addParquePolygon(previewMap);
                 ParqueLeaflet.freezeMap(previewMap);
                 L.marker(ll).addTo(previewMap);
                 requestAnimationFrame(function() { previewMap.invalidateSize(); });
@@ -560,6 +561,7 @@ $extra_scripts = <<<HTML
                 const z = hasCoords() ? 16 : 13;
                 editorMap = L.map('mapPicker').setView(ll, z);
                 ParqueLeaflet.addSatelliteLayer(editorMap);
+                ParqueLeaflet.addParquePolygon(editorMap);
 
                 function applyPos(latlng) {
                     latEl.value = latlng.lat.toFixed(8);

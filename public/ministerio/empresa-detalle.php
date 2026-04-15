@@ -328,6 +328,7 @@ if ($empresa['latitud'] && $empresa['longitud']) {
     <script>
         const map = L.map('mapDetalle', { zoomControl: false }).setView([{$la}, {$lo}], 15);
         ParqueLeaflet.addSatelliteLayer(map);
+        ParqueLeaflet.addParquePolygon(map);
         ParqueLeaflet.freezeMap(map);
         L.marker([{$la}, {$lo}]).addTo(map).bindPopup({$popupJs});
     </script>
