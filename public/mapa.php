@@ -39,41 +39,88 @@ require_once BASEPATH . '/includes/header.php';
 ?>
 
 <style>
-.map-page { display: flex; flex-wrap: wrap; min-height: calc(100vh - 70px); }
-.map-panel-left { width: 340px; min-width: 340px; background: #fff; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10; display: flex; flex-direction: column; height: calc(100vh - 70px); position: sticky; top: 70px; }
-.map-panel-right { flex: 1; position: relative; min-height: calc(100vh - 70px); }
-#mapFull { width: 100%; height: 100%; min-height: calc(100vh - 70px); }
-.panel-header { background: var(--primary); color: #fff; padding: 14px 18px; }
-.panel-header h4 { margin: 0; font-size: 1rem; }
+/* ── Contenedor marco ── */
+.map-wrapper {
+    padding: 18px;
+    background: #f0f4f8;
+    min-height: calc(100vh - 70px);
+    box-sizing: border-box;
+}
+.map-frame {
+    display: flex;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(26,82,118,0.18), 0 2px 8px rgba(0,0,0,0.10);
+    border: 2px solid rgba(26,82,118,0.13);
+    height: calc(100vh - 110px);
+    min-height: 520px;
+    background: #fff;
+}
+
+/* ── Panel izquierdo ── */
+.map-panel-left {
+    width: 300px;
+    min-width: 300px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-right: 1px solid #e5e7eb;
+}
+.panel-header {
+    background: linear-gradient(135deg, #1a5276 0%, #0e3a52 100%);
+    color: #fff;
+    padding: 16px 16px 14px;
+    flex-shrink: 0;
+}
+.panel-header h4 { margin: 0; font-size: 0.95rem; font-weight: 700; letter-spacing: .01em; }
+.panel-header .subtitle { font-size: 0.72rem; opacity: .75; margin-top: 2px; }
 .panel-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-.panel-stat { background: rgba(255,255,255,0.15); padding: 8px; border-radius: 8px; text-align: center; }
-.panel-stat .value { font-size: 1.4rem; font-weight: 700; }
-.panel-stat .label { font-size: 0.75rem; opacity: 0.9; }
-.filter-section { padding: 12px 15px; border-bottom: 1px solid #eee; }
-.filter-section h6 { font-size: 0.8rem; color: var(--gray-600); margin-bottom: 8px; }
+.panel-stat { background: rgba(255,255,255,0.13); padding: 8px 6px; border-radius: 8px; text-align: center; }
+.panel-stat .value { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.panel-stat .label { font-size: 0.68rem; opacity: .85; margin-top: 2px; }
+
+/* ── Filtros ── */
+.filter-section { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0; }
+.filter-section h6 { font-size: 0.72rem; color: #6b7280; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; }
+
+/* ── Lista empresas ── */
 .empresa-list { flex: 1; overflow-y: auto; }
-.empresa-list-item { padding: 10px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.15s; }
-.empresa-list-item:hover { background: var(--gray-100); }
-.empresa-list-item.active { background: #e3f2fd; border-left: 3px solid var(--primary); }
-.empresa-list-item .nombre { font-weight: 600; font-size: 0.88rem; color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.empresa-list-item .rubro { font-size: 0.75rem; color: var(--gray-600); }
-.empresa-list-item .ubicacion { font-size: 0.7rem; color: var(--gray-500); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empresa-list-item { padding: 9px 14px; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.12s; display: flex; align-items: center; gap: 9px; }
+.empresa-list-item:hover { background: #f0f7ff; }
+.empresa-list-item.active { background: #dbeafe; border-left: 3px solid #1a5276; }
+.empresa-list-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid rgba(0,0,0,.12); }
+.empresa-list-info { min-width: 0; }
+.empresa-list-item .nombre { font-weight: 600; font-size: 0.83rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empresa-list-item .rubro  { font-size: 0.71rem; color: #64748b; }
+.empresa-list-item .ubicacion { font-size: 0.68rem; color: #94a3b8; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Leyenda ── */
+.legend-section { padding: 10px 14px; border-top: 1px solid #f0f0f0; flex-shrink: 0; background: #fafafa; }
+.legend-section h6 { font-size: 0.68rem; color: #6b7280; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 7px; }
+.legend-items { display: flex; flex-wrap: wrap; gap: 5px; }
+.legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.68rem; color: #374151; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Mapa ── */
+.map-panel-right { flex: 1; position: relative; height: 100%; }
+#mapFull { width: 100%; height: 100%; }
+
+/* ── Responsive ── */
 @media (max-width: 991px) {
-    .map-panel-left { width: 100%; min-width: unset; height: auto; max-height: 350px; position: static; }
-    .map-page { flex-direction: column; }
-    #mapFull { min-height: 450px; }
+    .map-wrapper { padding: 10px; }
+    .map-frame { flex-direction: column; height: auto; border-radius: 12px; }
+    .map-panel-left { width: 100%; min-width: unset; height: auto; max-height: 320px; border-right: none; border-bottom: 1px solid #e5e7eb; }
+    #mapFull { min-height: 420px; }
 }
 </style>
 
-<div class="map-page">
+<div class="map-wrapper">
+<div class="map-frame">
     <div class="map-panel-left">
-        <?php if (!empty($sin_coords)): ?>
-        <div class="alert alert-warning border-0 rounded-0 small mb-0 py-2 px-3" role="status">
-            <strong>Mapa:</strong> <?= (int) $sin_coords ?> empresa(s) sin coordenadas (latitud/longitud). Cargalas desde el ministerio al editar cada empresa para ver marcadores.
-        </div>
-        <?php endif; ?>
         <div class="panel-header">
-            <h4><i class="bi bi-geo-alt me-2"></i>Parque Industrial de Catamarca</h4>
+            <h4><i class="bi bi-geo-alt-fill me-2"></i>Parque Industrial de Catamarca</h4>
+            <div class="subtitle">PI El Pantanillo · Catamarca, Argentina</div>
             <div class="panel-stats">
                 <div class="panel-stat">
                     <div class="value"><?= $total ?></div>
@@ -85,13 +132,19 @@ require_once BASEPATH . '/includes/header.php';
                 </div>
             </div>
         </div>
-        
+
+        <?php if (!empty($sin_coords)): ?>
+        <div class="alert alert-warning border-0 rounded-0 small mb-0 py-2 px-3" role="status" style="font-size:.75rem;">
+            <?= (int) $sin_coords ?> empresa(s) sin coordenadas registradas.
+        </div>
+        <?php endif; ?>
+
         <div class="filter-section">
-            <h6><i class="bi bi-funnel me-1"></i>FILTROS</h6>
+            <h6><i class="bi bi-funnel me-1"></i>Filtros</h6>
             <input type="text" id="searchEmpresa" class="form-control form-control-sm mb-2" placeholder="Buscar empresa...">
             <select id="filterRubro" class="form-select form-select-sm">
                 <option value="">Todos los rubros</option>
-                <?php 
+                <?php
                 $rubros_lista = array_unique(array_filter(array_column($empresas, 'rubro')));
                 sort($rubros_lista);
                 foreach ($rubros_lista as $rubro): ?>
@@ -99,32 +152,39 @@ require_once BASEPATH . '/includes/header.php';
                 <?php endforeach; ?>
             </select>
         </div>
-        
+
         <div class="filter-section py-2">
-            <h6 class="mb-0"><i class="bi bi-building me-1"></i>EMPRESAS (<span id="countVisible"><?= $total ?></span>)</h6>
+            <h6 class="mb-0"><i class="bi bi-building me-1"></i>Empresas &nbsp;<span class="badge bg-primary rounded-pill" style="font-size:.68rem;" id="countVisible"><?= $total ?></span></h6>
         </div>
-        
+
         <div class="empresa-list" id="empresaList">
-            <?php foreach ($empresas as $emp): 
+            <?php foreach ($empresas as $emp):
                 $tiene_coords = !empty($emp['latitud']) && !empty($emp['longitud']);
+                $rubro_key = strtoupper($emp['rubro'] ?? '');
             ?>
-            <div class="empresa-list-item <?= $tiene_coords ? '' : 'sin-mapa' ?>" 
-                 data-id="<?= $emp['id'] ?>" 
-                 data-lat="<?= $emp['latitud'] ?? '' ?>" 
+            <div class="empresa-list-item <?= $tiene_coords ? '' : 'sin-mapa' ?>"
+                 data-id="<?= $emp['id'] ?>"
+                 data-lat="<?= $emp['latitud'] ?? '' ?>"
                  data-lng="<?= $emp['longitud'] ?? '' ?>"
                  data-rubro="<?= e($emp['rubro'] ?? '') ?>"
                  data-nombre="<?= e(strtolower($emp['nombre'])) ?>">
-                <div class="nombre"><?= e($emp['nombre']) ?></div>
-                <div class="rubro"><?= e($emp['rubro'] ?? 'Sin rubro') ?></div>
-                <div class="ubicacion"><i class="bi bi-geo-alt"></i> <?= e($emp['ubicacion'] ?? '-') ?><?= !$tiene_coords ? ' <small class="text-muted">(sin ubicación en mapa)</small>' : '' ?></div>
+                <div class="empresa-list-dot" data-rubro-dot="<?= e($rubro_key) ?>"></div>
+                <div class="empresa-list-info">
+                    <div class="nombre"><?= e($emp['nombre']) ?></div>
+                    <div class="rubro"><?= e($emp['rubro'] ?? 'Sin rubro') ?></div>
+                    <div class="ubicacion"><i class="bi bi-geo-alt"></i> <?= e($emp['ubicacion'] ?? '-') ?><?= !$tiene_coords ? ' · <em>sin pin</em>' : '' ?></div>
+                </div>
             </div>
             <?php endforeach; ?>
         </div>
+
+        <div class="legend-section" id="legendSection"></div>
     </div>
-    
+
     <div class="map-panel-right">
         <div id="mapFull"></div>
     </div>
+</div>
 </div>
 
 <script>
@@ -145,7 +205,8 @@ document.addEventListener('DOMContentLoaded', function() {
         'MEDICAMENTOS': '#1abc9c'
     };
     
-    const map = L.map('mapFull').setView([-28.4696, -65.7795], 14);
+    // Centro: Parque Industrial El Pantanillo
+    const map = L.map('mapFull').setView([-28.5337, -65.8010], 15);
     
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Tiles © Esri'
@@ -205,6 +266,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Colorear dots de la lista y construir leyenda
+    const rubrosSeen = {};
+    document.querySelectorAll('.empresa-list-dot').forEach(dot => {
+        const rk = dot.dataset.rubroDot;
+        const c = coloresRubro[rk] || '#f39c12';
+        dot.style.background = c;
+        if (rk && !rubrosSeen[rk]) rubrosSeen[rk] = c;
+    });
+    const legendEl = document.getElementById('legendSection');
+    const rubroKeys = Object.keys(rubrosSeen);
+    if (rubroKeys.length) {
+        legendEl.innerHTML = '<h6><i class="bi bi-circle-half me-1"></i>Leyenda</h6><div class="legend-items">' +
+            rubroKeys.map(r => `<div class="legend-item"><div class="legend-dot" style="background:${rubrosSeen[r]}"></div>${r.charAt(0)+r.slice(1).toLowerCase()}</div>`).join('') +
+            '</div>';
+    }
+
     // Click en lista
     document.querySelectorAll('.empresa-list-item').forEach(item => {
         item.addEventListener('click', function() {
