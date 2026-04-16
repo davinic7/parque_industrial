@@ -203,11 +203,28 @@ $fmtDec = static function ($v, int $dec = 1): string {
                 <p class="text-muted mb-0">No hay movimientos registrados todavía.</p>
                 <?php else: ?>
                 <ul class="empresa-timeline">
-                    <?php foreach ($timeline as $row): ?>
+                    <?php foreach ($timeline as $row):
+                        $accion = (string) $row['accion'];
+                        if (str_contains($accion, 'login') && !str_contains($accion, 'logout')) {
+                            $ic_class = 'ic-login'; $ic_bi = 'bi-box-arrow-in-right';
+                        } elseif (str_contains($accion, 'logout') || str_contains($accion, 'cierre')) {
+                            $ic_class = 'ic-logout'; $ic_bi = 'bi-box-arrow-right';
+                        } elseif (str_contains($accion, 'perfil') || str_contains($accion, 'empresa')) {
+                            $ic_class = 'ic-perfil'; $ic_bi = 'bi-person-check';
+                        } elseif (str_contains($accion, 'formulario') || str_contains($accion, 'datos')) {
+                            $ic_class = 'ic-form'; $ic_bi = 'bi-file-earmark-check';
+                        } elseif (str_contains($accion, 'publicacion') || str_contains($accion, 'noticia')) {
+                            $ic_class = 'ic-pub'; $ic_bi = 'bi-megaphone';
+                        } else {
+                            $ic_class = 'ic-default'; $ic_bi = 'bi-activity';
+                        }
+                    ?>
                     <li>
-                        <span class="dot" aria-hidden="true"></span>
-                        <div class="when"><?= e(format_datetime($row['created_at'])) ?></div>
-                        <div class="what"><?= e(empresa_traducir_accion_log((string) $row['accion'])) ?></div>
+                        <span class="tl-icon <?= $ic_class ?>"><i class="bi <?= $ic_bi ?>"></i></span>
+                        <div class="tl-body">
+                            <div class="tl-what"><?= e(empresa_traducir_accion_log($accion)) ?></div>
+                            <div class="tl-when"><?= e(format_datetime($row['created_at'])) ?></div>
+                        </div>
                     </li>
                     <?php endforeach; ?>
                 </ul>
