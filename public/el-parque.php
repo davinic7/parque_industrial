@@ -91,7 +91,8 @@ require_once BASEPATH . '/includes/header.php';
 </style>
 
 <!-- ═══════════════════ HERO ═══════════════════ -->
-<section class="ep-hero">
+<?php $_hero_img_parque = get_config('nosotros_imagen', ''); ?>
+<section class="ep-hero" <?= $_hero_img_parque ? 'style="background: linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)), url(' . e($_hero_img_parque) . ') center/cover;"' : '' ?>>
     <div class="container">
         <div class="row align-items-center g-4">
             <div class="col-lg-7">

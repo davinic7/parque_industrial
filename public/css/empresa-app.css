@@ -405,6 +405,25 @@ body.ministerio-sidebar-open .empresa-app-backdrop {
 }
 
 /* Timeline */
+.empresa-timeline-scroll {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.empresa-timeline-scroll::-webkit-scrollbar {
+    width: 5px;
+}
+
+.empresa-timeline-scroll::-webkit-scrollbar-track {
+    background: #f1f4f8;
+    border-radius: 4px;
+}
+
+.empresa-timeline-scroll::-webkit-scrollbar-thumb {
+    background: #c8d0da;
+    border-radius: 4px;
+}
+
 .empresa-timeline {
     list-style: none;
     margin: 0;

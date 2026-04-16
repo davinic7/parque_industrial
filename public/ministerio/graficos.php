@@ -77,13 +77,20 @@ $evolucion_values = array_map('intval', array_column($evolucion_data, 'empleados
 // Puntos para mapa de calor (empresas con coordenadas y dotación)
 try {
     $stmt = $db->query("
-        SELECT e.latitud, e.longitud,
+        SELECT e.id, e.nombre, e.rubro,
+               e.latitud, e.longitud,
                COALESCE(de.dotacion_total, 0) AS empleados
-        FROM v_empresas_completas e
+        FROM empresas e
+        LEFT JOIN datos_empresa de
+            ON de.empresa_id = e.id
+            AND de.periodo = (SELECT MAX(periodo) FROM datos_empresa)
         WHERE e.latitud IS NOT NULL AND e.longitud IS NOT NULL
+          AND e.latitud <> 0 AND e.longitud <> 0
+        GROUP BY e.id, e.nombre, e.rubro, e.latitud, e.longitud, de.dotacion_total
     ");
     $heat_data = $stmt->fetchAll();
 } catch (Exception $e) {
+    error_log('graficos heat_data: ' . $e->getMessage());
     $heat_data = [];
 }
 
@@ -240,25 +247,48 @@ $extra_scripts = '
             });
         }
 
-        const map = L.map("heatMap").setView([' . $mapLat . ', ' . $mapLng . '], 12);
+        const map = L.map("heatMap").setView([' . $mapLat . ', ' . $mapLng . '], 13);
         ParqueLeaflet.addSatelliteLayer(map);
         ParqueLeaflet.addParquePolygon(map);
         if (heatPoints && heatPoints.length) {
+            const bounds = [];
             heatPoints.forEach(function(p) {
                 const lat = parseFloat(p.latitud);
                 const lng = parseFloat(p.longitud);
                 const empleados = parseInt(p.empleados, 10) || 0;
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    const radius = 50 + (empleados * 2);
-                    L.circle([lat, lng], {
-                        radius: radius,
-                        color: "#e74c3c",
-                        fillColor: "#e74c3c",
-                        fillOpacity: 0.4,
-                        weight: 1
-                    }).addTo(map);
-                }
+                if (isNaN(lat) || isNaN(lng)) return;
+                bounds.push([lat, lng]);
+
+                /* Círculo de calor proporcional a empleados */
+                const radius = Math.max(30, 20 + (empleados * 3));
+                L.circle([lat, lng], {
+                    radius: radius,
+                    color: "#c0392b",
+                    fillColor: "#e74c3c",
+                    fillOpacity: 0.35,
+                    weight: 1
+                }).addTo(map);
+
+                /* Marcador con icono y popup */
+                const icon = L.divIcon({
+                    className: "",
+                    html: `<div style="
+                        background:#e74c3c;border:2px solid #fff;border-radius:50%;
+                        width:12px;height:12px;box-shadow:0 0 4px rgba(0,0,0,.5);">
+                    </div>`,
+                    iconSize: [12, 12],
+                    iconAnchor: [6, 6]
+                });
+                const nombre  = p.nombre  || "Empresa";
+                const rubro   = p.rubro   || "—";
+                const empText = empleados > 0 ? empleados + " empleados" : "Sin datos de dotación";
+                L.marker([lat, lng], { icon: icon })
+                    .bindPopup(`<strong>${nombre}</strong><br><small>${rubro}</small><br><small>${empText}</small>`)
+                    .addTo(map);
             });
+            if (bounds.length > 1) {
+                map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+            }
         }
     </script>
 ';

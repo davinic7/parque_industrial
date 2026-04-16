@@ -57,10 +57,16 @@ $filtros_activos = ($busqueda !== '' || $filtro_rubro !== '' || $filtro_ubicacio
 require_once BASEPATH . '/includes/header.php';
 ?>
 
-<div class="bg-primary text-white py-4">
+<?php
+$_hero_t = get_config('hero_empresas_titulo',    'Directorio de Empresas');
+$_hero_s = get_config('hero_empresas_subtitulo', 'Encontrá las empresas del Parque Industrial de Catamarca');
+$_hero_i = get_config('hero_empresas_imagen',    '');
+?>
+<div style="background: <?= $_hero_i ? 'linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)), url(' . e($_hero_i) . ') center/cover' : '' ?>;"
+     class="<?= $_hero_i ? '' : 'bg-primary' ?> text-white py-4">
     <div class="container">
-        <h1 class="h3 mb-0"><i class="bi bi-buildings me-2"></i>Directorio de Empresas</h1>
-        <p class="mb-0 opacity-75">Encontrá las empresas del Parque Industrial de Catamarca</p>
+        <h1 class="h3 mb-0"><i class="bi bi-buildings me-2"></i><?= e($_hero_t) ?></h1>
+        <?php if ($_hero_s): ?><p class="mb-0 opacity-75"><?= e($_hero_s) ?></p><?php endif; ?>
     </div>
 </div>
 

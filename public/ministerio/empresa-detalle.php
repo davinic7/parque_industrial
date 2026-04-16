@@ -303,13 +303,16 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                     <div class="card-body p-0">
                         <?php if (empty($actividad)): ?>
                         <p class="text-muted text-center py-3">Sin actividad</p>
-                        <?php endif; ?>
+                        <?php else: ?>
+                        <div class="empresa-timeline-scroll">
                         <?php foreach ($actividad as $act): ?>
                         <div class="p-2 px-3 border-bottom">
                             <small><strong><?= e(str_replace('_', ' ', ucfirst($act['accion']))) ?></strong></small>
                             <br><small class="text-muted"><?= e($act['email'] ?? '') ?> - <?= format_datetime($act['created_at']) ?></small>
                         </div>
                         <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

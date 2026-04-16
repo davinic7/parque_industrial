@@ -202,6 +202,7 @@ $fmtDec = static function ($v, int $dec = 1): string {
                 <?php if (empty($timeline)): ?>
                 <p class="text-muted mb-0">No hay movimientos registrados todavía.</p>
                 <?php else: ?>
+                <div class="empresa-timeline-scroll">
                 <ul class="empresa-timeline">
                     <?php foreach ($timeline as $row):
                         $accion = (string) $row['accion'];
@@ -228,6 +229,7 @@ $fmtDec = static function ($v, int $dec = 1): string {
                     </li>
                     <?php endforeach; ?>
                 </ul>
+                </div>
                 <?php endif; ?>
             </div>
         </div>

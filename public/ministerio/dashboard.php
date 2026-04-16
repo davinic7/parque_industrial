@@ -122,7 +122,8 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                         <?php if (empty($actividad)): ?>
                         <p class="text-muted text-center py-4 mb-0">Sin actividad reciente</p>
                         <?php else: ?>
-                        <ul class="empresa-timeline px-3 py-2 mb-0">
+                        <div class="empresa-timeline-scroll px-3 py-2">
+                        <ul class="empresa-timeline mb-0">
                             <?php foreach ($actividad as $act):
                                 $accion = (string) $act['accion'];
                                 if (str_contains($accion, 'login') && !str_contains($accion, 'logout')) {
@@ -149,6 +150,7 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                             </li>
                             <?php endforeach; ?>
                         </ul>
+                        </div>
                         <?php endif; ?>
                     </div>
                 </div>

@@ -84,7 +84,7 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="py-5">
     <div class="container">
-        <h1 class="text-center mb-4">Noticias y Publicaciones</h1>
+        <h1 class="text-center mb-4"><?= e(get_config('hero_noticias_titulo', 'Noticias y Publicaciones')) ?></h1>
 
         <div class="row justify-content-center mb-4">
             <div class="col-lg-8">

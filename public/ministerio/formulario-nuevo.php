@@ -218,11 +218,36 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                 <?php endforeach; ?>
             </div>
 
-            <div class="d-flex gap-2 mt-3">
+            <div class="d-flex gap-2 mt-3 flex-wrap">
                 <button type="submit" class="btn btn-primary"><i class="bi bi-save me-2"></i>Guardar formulario</button>
+                <button type="button" id="btnPreview" class="btn btn-outline-info"><i class="bi bi-eye me-2"></i>Vista previa</button>
                 <a href="formularios-dinamicos.php" class="btn btn-outline-secondary">Cancelar</a>
             </div>
         </form>
+
+<!-- Modal Vista Previa -->
+<div class="modal fade" id="modalPreview" tabindex="-1" aria-labelledby="modalPreviewLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPreviewLabel"><i class="bi bi-eye me-2"></i>Vista previa del formulario</h5>
+                <div class="ms-auto d-flex gap-2 align-items-center me-2">
+                    <button type="button" id="btnPrintForm" class="btn btn-sm btn-outline-secondary"><i class="bi bi-printer me-1"></i>Imprimir</button>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewBody">
+                <!-- generado por JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Zona de impresión (oculta en pantalla) -->
+<div id="printArea" class="d-none"></div>
 
     <template id="preguntaTemplate">
         <div class="card mb-3 pregunta-item">
@@ -293,6 +318,27 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
 
 <?php
 $extra_scripts = <<<'JS'
+<style>
+@media print {
+    body > *:not(#printArea) { display: none !important; }
+    #printArea {
+        display: block !important;
+        font-family: Arial, sans-serif;
+        padding: 20px;
+    }
+    #printArea .pv-field { margin-bottom: 18px; }
+    #printArea .pv-label { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
+    #printArea .pv-input { border: 1px solid #999; border-radius: 4px; padding: 6px 10px; min-height: 32px; width: 100%; box-sizing: border-box; }
+    #printArea .pv-textarea { min-height: 64px; }
+    #printArea table { border-collapse: collapse; width: 100%; }
+    #printArea table th, #printArea table td { border: 1px solid #aaa; padding: 6px 10px; }
+    #printArea .pv-required { color: #c0392b; }
+    #printArea .pv-help { font-size: 0.8rem; color: #666; margin-top: 2px; }
+    #printArea .pv-header { margin-bottom: 24px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+    #printArea .pv-header h2 { margin: 0 0 6px; font-size: 1.4rem; }
+    #printArea .pv-header p { margin: 0; color: #555; font-size: 0.9rem; }
+}
+</style>
 <script>
 (function() {
     const container = document.getElementById('preguntasContainer');
@@ -336,6 +382,119 @@ $extra_scripts = <<<'JS'
 
     container.querySelectorAll('.pregunta-item').forEach(bindItem);
     updateNames();
+
+    /* ---- Vista previa ---- */
+    function esc(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function buildFieldHTML(tipo, label, ayuda, requerido, opciones, cols, rows, min, max) {
+        const req = requerido ? ' <span class="text-danger">*</span>' : '';
+        const reqAttr = requerido ? ' required' : '';
+        let control = '';
+
+        if (tipo === 'texto') {
+            control = `<input type="text" class="form-control"${reqAttr} placeholder="${esc(label)}">`;
+        } else if (tipo === 'textarea') {
+            control = `<textarea class="form-control" rows="3"${reqAttr}></textarea>`;
+        } else if (tipo === 'numero') {
+            const minA = min !== '' ? ` min="${esc(min)}"` : '';
+            const maxA = max !== '' ? ` max="${esc(max)}"` : '';
+            control = `<input type="number" class="form-control"${reqAttr}${minA}${maxA}>`;
+        } else if (tipo === 'fecha') {
+            control = `<input type="date" class="form-control"${reqAttr}>`;
+        } else if (tipo === 'select') {
+            const items = opciones.split('\n').map(o => o.trim()).filter(Boolean);
+            const opts = items.map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+            control = `<select class="form-select"${reqAttr}><option value="">Seleccionar…</option>${opts}</select>`;
+        } else if (tipo === 'radio') {
+            const items = opciones.split('\n').map(o => o.trim()).filter(Boolean);
+            control = items.map((o, i) => `
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="prev_${label.replace(/\s/g,'_')}" id="r${i}_${label.replace(/\s/g,'_')}">
+                    <label class="form-check-label" for="r${i}_${label.replace(/\s/g,'_')}">${esc(o)}</label>
+                </div>`).join('');
+        } else if (tipo === 'checkbox') {
+            const items = opciones.split('\n').map(o => o.trim()).filter(Boolean);
+            control = items.map((o, i) => `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="c${i}_${label.replace(/\s/g,'_')}">
+                    <label class="form-check-label" for="c${i}_${label.replace(/\s/g,'_')}">${esc(o)}</label>
+                </div>`).join('');
+        } else if (tipo === 'tabla') {
+            const colArr = cols.split('\n').map(c => c.trim()).filter(Boolean);
+            const rowArr = rows.split('\n').map(r => r.trim()).filter(Boolean);
+            if (colArr.length && rowArr.length) {
+                const thead = `<tr><th></th>${colArr.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>`;
+                const tbody = rowArr.map(r => `<tr><td>${esc(r)}</td>${colArr.map(()=>'<td><input type="text" class="form-control form-control-sm"></td>').join('')}</tr>`).join('');
+                control = `<div class="table-responsive"><table class="table table-bordered table-sm"><thead class="table-light">${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+            } else {
+                control = '<p class="text-muted small">Tabla sin columnas/filas definidas</p>';
+            }
+        } else if (tipo === 'archivo') {
+            control = `<input type="file" class="form-control"${reqAttr}>`;
+        } else if (tipo === 'direccion') {
+            control = `
+                <div class="row g-2">
+                    <div class="col-md-6"><input type="text" class="form-control" placeholder="Calle y número"></div>
+                    <div class="col-md-3"><input type="text" class="form-control" placeholder="Ciudad"></div>
+                    <div class="col-md-3"><input type="text" class="form-control" placeholder="Provincia"></div>
+                </div>`;
+        }
+
+        const ayudaHTML = ayuda ? `<div class="form-text">${esc(ayuda)}</div>` : '';
+        return `
+            <div class="mb-4">
+                <label class="form-label fw-semibold">${esc(label)}${req}</label>
+                ${control}
+                ${ayudaHTML}
+            </div>`;
+    }
+
+    function buildPreview() {
+        const titulo = document.querySelector('[name="titulo"]').value.trim() || '(Sin título)';
+        const descripcion = document.querySelector('[name="descripcion"]').value.trim();
+        const items = container.querySelectorAll('.pregunta-item');
+
+        let fieldsHTML = '';
+        if (items.length === 0) {
+            fieldsHTML = '<p class="text-muted">No hay preguntas agregadas.</p>';
+        } else {
+            items.forEach(item => {
+                const tipo = item.querySelector('.pregunta-tipo').value;
+                const label = item.querySelector('[data-name="pregunta_label"]').value.trim() || '(Sin etiqueta)';
+                const requerido = item.querySelector('[data-name="pregunta_requerido"]').checked;
+                const ayuda = item.querySelector('[data-name="pregunta_ayuda"]').value.trim();
+                const opciones = item.querySelector('[data-name="pregunta_opciones"]')?.value || '';
+                const cols = item.querySelector('[data-name="pregunta_tabla_cols"]')?.value || '';
+                const rows = item.querySelector('[data-name="pregunta_tabla_rows"]')?.value || '';
+                const min = item.querySelector('[data-name="pregunta_min"]')?.value || '';
+                const max = item.querySelector('[data-name="pregunta_max"]')?.value || '';
+                fieldsHTML += buildFieldHTML(tipo, label, ayuda, requerido, opciones, cols, rows, min, max);
+            });
+        }
+
+        return `
+            <div class="mb-4 pb-3 border-bottom">
+                <h4 class="fw-bold">${esc(titulo)}</h4>
+                ${descripcion ? `<p class="text-muted mb-0">${esc(descripcion)}</p>` : ''}
+            </div>
+            ${fieldsHTML}`;
+    }
+
+    document.getElementById('btnPreview').addEventListener('click', () => {
+        const html = buildPreview();
+        document.getElementById('previewBody').innerHTML = html;
+        document.getElementById('printArea').innerHTML =
+            `<div class="pv-header"><h2>${document.querySelector('[name="titulo"]').value.trim() || '(Sin título)'}</h2>` +
+            (document.querySelector('[name="descripcion"]').value.trim() ? `<p>${document.querySelector('[name="descripcion"]').value.trim()}</p>` : '') +
+            `</div>` + html;
+        new bootstrap.Modal(document.getElementById('modalPreview')).show();
+    });
+
+    document.getElementById('btnPrintForm').addEventListener('click', () => {
+        window.print();
+    });
 })();
 </script>
 JS;

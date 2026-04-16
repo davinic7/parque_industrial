@@ -69,6 +69,7 @@ $nav = static function (string $key) use ($empresa_nav): string {
             <a href="dashboard.php" class="<?= $nav('dashboard') ?>"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
             <a href="formularios.php" class="<?= $nav('formularios') ?>"><i class="fa-solid fa-file-lines"></i> Formularios</a>
             <a href="publicaciones.php" class="<?= $nav('publicaciones') ?>"><i class="fa-solid fa-bullhorn"></i> Publicaciones</a>
+            <a href="solicitar-proyecto.php" class="<?= $nav('solicitar_proyecto') ?>"><i class="fa-solid fa-paper-plane"></i> Presentar proyecto</a>
         </nav>
         <div class="empresa-sidebar-footer">
             <a href="<?= e(PUBLIC_URL) ?>/" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> Ver sitio público</a>

@@ -50,13 +50,18 @@ require_once BASEPATH . '/includes/header.php';
 .progress-custom .count { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-weight: 600; color: #333; }
 </style>
 
+<?php
+$_hero_t_stats = get_config('hero_estadisticas_titulo',    'Estadísticas del Parque Industrial');
+$_hero_s_stats = get_config('hero_estadisticas_subtitulo', 'Datos del desarrollo industrial de Catamarca');
+$_hero_i_stats = get_config('hero_estadisticas_imagen',    '');
+?>
 <?php if (in_array('header', $visibles)): ?>
-<div class="stats-header">
+<div class="stats-header" <?= $_hero_i_stats ? 'style="background: linear-gradient(rgba(0,0,0,.5),rgba(0,0,0,.5)), url(' . e($_hero_i_stats) . ') center/cover;"' : '' ?>>
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-6">
-                <h1><i class="bi bi-graph-up me-2"></i>Estadísticas del Parque Industrial</h1>
-                <p class="mb-0 opacity-75">Datos del desarrollo industrial de Catamarca</p>
+                <h1><i class="bi bi-graph-up me-2"></i><?= e($_hero_t_stats) ?></h1>
+                <p class="mb-0 opacity-75"><?= e($_hero_s_stats) ?></p>
             </div>
             <div class="col-md-6 text-md-end mt-3 mt-md-0">
                 <div class="d-inline-block text-center me-4">
