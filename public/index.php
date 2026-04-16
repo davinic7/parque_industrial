@@ -113,23 +113,6 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
 </section>
 <?php endif; ?>
 
-<!-- Dato impacto -->
-<div class="dato-impacto-strip">
-    <div class="container">
-        <div class="dato-impacto-inner">
-            <span class="dato-impacto-icon"><i class="bi bi-lightbulb-fill"></i></span>
-            <span class="dato-impacto-text">
-                ¿Sabías que el Parque Industrial El Pantanillo concentra empresas de
-                <strong><?= ($stats['total_rubros'] ?? 0) > 0 ? ($stats['total_rubros']) . ' rubros industriales' : 'múltiples rubros industriales' ?></strong>
-                y genera más de
-                <strong><?= ($stats['total_empleados'] ?? 0) > 0 ? format_number($stats['total_empleados']) . ' empleos directos' : 'cientos de empleos directos' ?></strong>
-                en Catamarca?
-            </span>
-            <a href="<?= PUBLIC_URL ?>/estadisticas.php" class="dato-impacto-link">Ver estadísticas <i class="bi bi-arrow-right ms-1"></i></a>
-        </div>
-    </div>
-</div>
-
 <!-- Cuadros con números: todos son botones (enlaces) -->
 <div class="stat-cards">
     <a href="<?= PUBLIC_URL ?>/empresas.php" class="stat-card stat-card-link" title="Ver empresas">
@@ -157,6 +140,23 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
         <div class="number"><?= $stats['huella_carbono'] ?? '400' ?></div>
         <div class="label">tCO2e Huella Carbono</div>
     </a>
+</div>
+
+<!-- Dato impacto -->
+<div class="dato-impacto-strip">
+    <div class="container">
+        <div class="dato-impacto-inner">
+            <span class="dato-impacto-icon"><i class="bi bi-lightbulb-fill"></i></span>
+            <span class="dato-impacto-text">
+                ¿Sabías que el Parque Industrial El Pantanillo concentra empresas de
+                <strong><?= ($stats['total_rubros'] ?? 0) > 0 ? ($stats['total_rubros']) . ' rubros industriales' : 'múltiples rubros industriales' ?></strong>
+                y genera más de
+                <strong><?= ($stats['total_empleados'] ?? 0) > 0 ? format_number($stats['total_empleados']) . ' empleos directos' : 'cientos de empleos directos' ?></strong>
+                en Catamarca?
+            </span>
+            <a href="<?= PUBLIC_URL ?>/estadisticas.php" class="dato-impacto-link">Ver estadísticas <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+    </div>
 </div>
 
 <!-- Empresas Destacadas -->
