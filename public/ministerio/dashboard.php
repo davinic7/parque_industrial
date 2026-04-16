@@ -179,9 +179,10 @@ $extra_scripts = <<<HTML
             },
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
         });
-        const map = L.map('miniMap', { zoomControl: false }).setView([-28.5337, -65.8010], 14);
+        const map = L.map('miniMap', { zoomControl: false, attributionControl: false });
         ParqueLeaflet.addSatelliteLayer(map);
-        ParqueLeaflet.addParquePolygon(map);
+        const poly = ParqueLeaflet.addParquePolygon(map);
+        map.fitBounds(poly.getBounds(), { padding: [8, 8] });
         ParqueLeaflet.freezeMap(map);
     </script>
 HTML;

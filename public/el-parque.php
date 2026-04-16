@@ -68,8 +68,7 @@ require_once BASEPATH . '/includes/header.php';
 .ep-stat-box .lbl { font-size: .78rem; opacity: .85; margin-top: 4px; }
 
 /* ── Mapa ── */
-.map-embed-wrapper { border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.14); }
-.map-embed-wrapper iframe { width: 100%; height: 460px; border: 0; display: block; }
+.map-embed-wrapper { border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.14); height: 460px; }
 
 /* ── Info cards sidebar ── */
 .info-card { background: #fff; border-radius: 12px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,.07); height: 100%; }
@@ -150,12 +149,7 @@ require_once BASEPATH . '/includes/header.php';
         </div>
         <div class="row g-4">
             <div class="col-lg-8">
-                <div class="map-embed-wrapper">
-                    <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d8581.102999803312!2d-65.80320054234065!3d-28.53373098685408!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9424297ed9062de9%3A0xab676b250c7a9379!2sParque%20Industrial%20El%20Pantanillo!5e0!3m2!1ses-419!2sar!4v1774649365290!5m2!1ses-419!2sar"
-                        allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-                    </iframe>
-                </div>
+                <div id="mapElParque" class="map-embed-wrapper"></div>
             </div>
             <div class="col-lg-4 d-flex flex-column gap-4">
                 <div class="info-card">
@@ -289,4 +283,16 @@ require_once BASEPATH . '/includes/header.php';
     </div>
 </section>
 
-<?php require_once BASEPATH . '/includes/footer.php'; ?>
+<?php
+$extra_js = '<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var mapEl = document.getElementById("mapElParque");
+    if (mapEl && typeof ParqueLeaflet !== "undefined") {
+        var m = L.map("mapElParque", { zoomControl: true, attributionControl: true });
+        ParqueLeaflet.addSatelliteLayer(m);
+        var poly = ParqueLeaflet.addParquePolygon(m);
+        m.fitBounds(poly.getBounds(), { padding: [40, 40] });
+    }
+});
+</script>';
+require_once BASEPATH . '/includes/footer.php'; ?>

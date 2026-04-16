@@ -229,10 +229,7 @@ $hero_imagen_fallback = (defined('PUBLIC_URL') ? PUBLIC_URL : '') . '/img/hero-p
             <div class="section-divider"></div>
         </div>
         
-        <div class="mapa-poligono-wrap" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4316.260328892127!2d-65.80097357981687!3d-28.53371495708517!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9424297ed9062de9%3A0xab676b250c7a9379!2sParque%20Industrial%20El%20Pantanillo!5e1!3m2!1ses-419!2sar!4v1776283949669!5m2!1ses-419!2sar"
-                width="100%" height="420" style="border:0; display:block;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div>
+        <div id="mapParqueIndex" style="height:420px; border-radius:12px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,0.15);"></div>
         
         <div class="text-center mt-4">
             <a href="<?= PUBLIC_URL ?>/mapa.php" class="btn btn-primary btn-lg">
@@ -306,6 +303,15 @@ document.addEventListener("DOMContentLoaded", function() {
             data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderWidth: 2, borderColor: "#fff" }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { padding: 15, usePointStyle: true } } } }
         });
+    }
+    // Mapa satélite con polígono Pantanillo
+    var mapIdx = document.getElementById("mapParqueIndex");
+    if (mapIdx && typeof ParqueLeaflet !== "undefined") {
+        var m = L.map("mapParqueIndex", { zoomControl: false, attributionControl: true });
+        ParqueLeaflet.addSatelliteLayer(m);
+        var poly = ParqueLeaflet.addParquePolygon(m);
+        m.fitBounds(poly.getBounds(), { padding: [30, 30] });
+        ParqueLeaflet.freezeMap(m);
     }
 });
 </script>';
