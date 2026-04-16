@@ -119,35 +119,37 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                 <div class="card">
                     <div class="card-header bg-white"><h5 class="mb-0">Actividad Reciente</h5></div>
                     <div class="card-body p-0">
-                        <div class="list-group list-group-flush">
-                            <?php if (empty($actividad)): ?>
-                            <div class="list-group-item text-center text-muted py-4">Sin actividad reciente</div>
-                            <?php endif; ?>
-                            <?php
-                            $iconos = [
-                                'login'                => 'bi-box-arrow-in-right text-primary',
-                                'logout'               => 'bi-box-arrow-left text-secondary',
-                                'perfil_actualizado'   => 'bi-pencil text-warning',
-                                'formulario_enviado'   => 'bi-file-earmark-check text-success',
-                                'empresa_registrada'   => 'bi-building text-primary',
-                                'publicacion_enviada'  => 'bi-send text-info',
-                                'publicacion_aprobada' => 'bi-check-circle text-success',
-                                'publicacion_rechazada'=> 'bi-x-circle text-danger',
-                            ];
-                            foreach ($actividad as $act):
-                                $icono = $iconos[$act['accion']] ?? 'bi-circle text-muted';
+                        <?php if (empty($actividad)): ?>
+                        <p class="text-muted text-center py-4 mb-0">Sin actividad reciente</p>
+                        <?php else: ?>
+                        <ul class="empresa-timeline px-3 py-2 mb-0">
+                            <?php foreach ($actividad as $act):
+                                $accion = (string) $act['accion'];
+                                if (str_contains($accion, 'login') && !str_contains($accion, 'logout')) {
+                                    $ic_class = 'ic-login'; $ic_bi = 'bi-box-arrow-in-right';
+                                } elseif (str_contains($accion, 'logout')) {
+                                    $ic_class = 'ic-logout'; $ic_bi = 'bi-box-arrow-right';
+                                } elseif (str_contains($accion, 'perfil') || str_contains($accion, 'empresa')) {
+                                    $ic_class = 'ic-perfil'; $ic_bi = 'bi-person-check';
+                                } elseif (str_contains($accion, 'formulario') || str_contains($accion, 'datos')) {
+                                    $ic_class = 'ic-form'; $ic_bi = 'bi-file-earmark-check';
+                                } elseif (str_contains($accion, 'publicacion') || str_contains($accion, 'noticia')) {
+                                    $ic_class = 'ic-pub'; $ic_bi = 'bi-megaphone';
+                                } else {
+                                    $ic_class = 'ic-default'; $ic_bi = 'bi-activity';
+                                }
+                                $subtitulo = trim(($act['empresa_nombre'] ?? '') ?: ($act['email'] ?? ''));
                             ?>
-                            <div class="list-group-item">
-                                <div class="d-flex gap-3">
-                                    <i class="bi <?= $icono ?>"></i>
-                                    <div>
-                                        <p class="mb-0 small"><strong><?= e(str_replace('_', ' ', ucfirst($act['accion']))) ?></strong></p>
-                                        <small class="text-muted"><?= e($act['empresa_nombre'] ?? $act['email'] ?? '') ?> - <?= format_datetime($act['created_at']) ?></small>
-                                    </div>
+                            <li>
+                                <span class="tl-icon <?= $ic_class ?>"><i class="bi <?= $ic_bi ?>"></i></span>
+                                <div class="tl-body">
+                                    <div class="tl-what"><?= e(str_replace('_', ' ', ucfirst($accion))) ?></div>
+                                    <div class="tl-when"><?= $subtitulo ? e($subtitulo) . ' · ' : '' ?><?= e(format_datetime($act['created_at'])) ?></div>
                                 </div>
-                            </div>
+                            </li>
                             <?php endforeach; ?>
-                        </div>
+                        </ul>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div class="card mt-4">

@@ -68,7 +68,7 @@ try {
         FROM log_actividad
         WHERE empresa_id = ?
         ORDER BY created_at DESC
-        LIMIT 15
+        LIMIT 6
     ');
     $st->execute([$empresa_id]);
     $timeline = $st->fetchAll(PDO::FETCH_ASSOC);
