@@ -406,59 +406,60 @@ body.ministerio-sidebar-open .empresa-app-backdrop {
 
 /* Timeline */
 .empresa-timeline {
-    position: relative;
-    padding-left: 0;
     list-style: none;
     margin: 0;
+    padding: 0;
 }
 
 .empresa-timeline li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f3f6;
     position: relative;
-    padding-left: 2rem;
-    padding-bottom: 1.25rem;
 }
 
 .empresa-timeline li:last-child {
+    border-bottom: none;
     padding-bottom: 0;
 }
 
-.empresa-timeline li::before {
-    content: '';
-    position: absolute;
-    left: 0.45rem;
-    top: 0.5rem;
-    bottom: -0.25rem;
-    width: 2px;
-    background: linear-gradient(180deg, var(--ea-primary) 0%, rgba(26, 82, 118, 0.15) 100%);
-}
-
-.empresa-timeline li:last-child::before {
-    bottom: auto;
-    height: 0;
-}
-
-.empresa-timeline .dot {
-    position: absolute;
-    left: 0;
-    top: 0.2rem;
-    width: 1rem;
-    height: 1rem;
+.empresa-timeline .tl-icon {
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background: #fff;
-    border: 3px solid var(--ea-primary);
-    box-shadow: 0 0 0 3px rgba(26, 82, 118, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    margin-top: 1px;
 }
 
-.empresa-timeline .when {
-    font-size: 0.75rem;
-    color: #8899a8;
-    margin-bottom: 0.2rem;
+.empresa-timeline .tl-icon.ic-login    { background: #e8f4fd; color: #2980b9; }
+.empresa-timeline .tl-icon.ic-logout   { background: #f5f5f5; color: #95a5a6; }
+.empresa-timeline .tl-icon.ic-perfil   { background: #eafaf1; color: #27ae60; }
+.empresa-timeline .tl-icon.ic-form     { background: #fef9e7; color: #f39c12; }
+.empresa-timeline .tl-icon.ic-pub      { background: #f5eef8; color: #8e44ad; }
+.empresa-timeline .tl-icon.ic-default  { background: #f0f3f6; color: #7f8c8d; }
+
+.empresa-timeline .tl-body {
+    flex: 1;
+    min-width: 0;
 }
 
-.empresa-timeline .what {
-    font-size: 0.9rem;
-    color: #2c3e50;
+.empresa-timeline .tl-what {
+    font-size: 0.875rem;
     font-weight: 500;
+    color: #2c3e50;
+    line-height: 1.3;
+    margin-bottom: 2px;
+}
+
+.empresa-timeline .tl-when {
+    font-size: 0.75rem;
+    color: #a0aab4;
 }
 
 /* Métricas fila superior dashboard */
