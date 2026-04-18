@@ -8,9 +8,28 @@
     var SAT_URL = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
     var SAT_ATTR = '&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics';
 
+    // Zoom mínimo: muestra el parque completo. Máximo: detalle de parcela.
+    var MAP_MIN_ZOOM = 14;
+    var MAP_MAX_ZOOM = 19;
+
+    // Bounding box del parque con margen de ~800 m para no cortar el polígono.
+    var PARQUE_BOUNDS = L.latLngBounds(
+        L.latLng(-28.558, -65.826),   // SW
+        L.latLng(-28.514, -65.778)    // NE
+    );
+
+    // Restringe zoom y paneo a la zona del parque.
+    function constrainMap(map) {
+        map.setMinZoom(MAP_MIN_ZOOM);
+        map.setMaxZoom(MAP_MAX_ZOOM);
+        map.setMaxBounds(PARQUE_BOUNDS);
+        map.options.maxBoundsViscosity = 1.0;
+    }
+
     function addSatelliteLayer(map) {
+        constrainMap(map);
         return L.tileLayer(SAT_URL, {
-            maxZoom: 19,
+            maxZoom: MAP_MAX_ZOOM,
             attribution: SAT_ATTR
         }).addTo(map);
     }
@@ -89,6 +108,10 @@
         freezeMap:          freezeMap,
         unfreezeMap:        unfreezeMap,
         addParquePolygon:   addParquePolygon,
-        PANTANILLO_POLYGON: PANTANILLO_POLYGON
+        constrainMap:       constrainMap,
+        PANTANILLO_POLYGON: PANTANILLO_POLYGON,
+        PARQUE_BOUNDS:      PARQUE_BOUNDS,
+        MAP_MIN_ZOOM:       MAP_MIN_ZOOM,
+        MAP_MAX_ZOOM:       MAP_MAX_ZOOM
     };
 })(typeof window !== 'undefined' ? window : this);
