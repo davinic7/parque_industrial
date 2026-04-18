@@ -69,7 +69,7 @@ $respuestas = $stmt->fetchAll();
             <button onclick="window.print()" class="btn btn-primary btn-sm">
                 <i class="bi bi-printer me-1"></i>Imprimir / Guardar PDF
             </button>
-            <a href="formulario-respuestas.php?id=<?= $form_id ?>" class="btn btn-outline-secondary btn-sm">
+            <a href="formulario-gestion.php?id=<?= $form_id ?>&tab=respuestas" class="btn btn-outline-secondary btn-sm">
                 ← Volver
             </a>
         </div>

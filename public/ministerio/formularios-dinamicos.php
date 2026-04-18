@@ -97,9 +97,9 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                         <td><?= format_datetime($f['created_at']) ?></td>
                         <td class="text-nowrap">
                             <a href="formulario-editar.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
-                            <a href="formulario-enviar.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline-info" title="Enviar a empresas"><i class="bi bi-send"></i></a>
-                            <a href="formulario-seguimiento.php?formulario_id=<?= $f['id'] ?>" class="btn btn-sm btn-outline-secondary" title="Historial envíos"><i class="bi bi-graph-up-arrow"></i></a>
-                            <a href="formulario-respuestas.php?id=<?= $f['id'] ?>" class="btn btn-sm btn-outline-success" title="Ver respuestas"><i class="bi bi-clipboard-data"></i></a>
+                            <a href="formulario-gestion.php?id=<?= $f['id'] ?>&tab=respuestas" class="btn btn-sm btn-outline-success" title="Respuestas"><i class="bi bi-clipboard-data"></i></a>
+                            <a href="formulario-gestion.php?id=<?= $f['id'] ?>&tab=envios" class="btn btn-sm btn-outline-secondary" title="Envíos y seguimiento"><i class="bi bi-graph-up-arrow"></i></a>
+                            <a href="formulario-gestion.php?id=<?= $f['id'] ?>&tab=enviar" class="btn btn-sm btn-outline-info" title="Enviar a empresas"><i class="bi bi-send"></i></a>
                             <form method="POST" class="d-inline">
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="formulario_id" value="<?= $f['id'] ?>">

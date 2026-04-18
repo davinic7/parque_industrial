@@ -81,22 +81,28 @@ $mn = static function (string $key) use ($ministerio_nav): string {
         <nav class="empresa-sidebar-nav">
             <a href="dashboard.php" class="<?= $mn('dashboard') ?>"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
 
-            <div class="empresa-sidebar-section">Gestión de empresas</div>
-            <a href="empresas.php" class="<?= $mn('empresas') ?>"><i class="fa-solid fa-buildings"></i> Empresas</a>
+            <div class="empresa-sidebar-section">Empresas</div>
+            <a href="empresas.php" class="<?= $mn('empresas') ?>"><i class="fa-solid fa-buildings"></i> Lista de empresas</a>
             <a href="nueva-empresa.php" class="<?= $mn('nueva_empresa') ?>"><i class="fa-solid fa-user-plus"></i> Nueva empresa</a>
-            <a href="formularios.php" class="<?= $mn('formularios') ?>"><i class="fa-solid fa-file-lines"></i> Formularios de datos</a>
-            <a href="formularios-dinamicos.php" class="<?= $mn('formularios_dinamicos') ?>"><i class="fa-solid fa-list-check"></i> Formularios dinámicos</a>
+            <a href="solicitudes-proyecto.php" class="<?= $mn('solicitudes') ?>"><i class="fa-solid fa-folder-open"></i> Solicitudes<?php if ($ministerio_badge_solicitudes > 0): ?> <span class="badge bg-warning text-dark rounded-pill"><?= $ministerio_badge_solicitudes > 99 ? '99+' : $ministerio_badge_solicitudes ?></span><?php endif; ?></a>
+
+            <div class="empresa-sidebar-section">Formularios</div>
+            <a href="formularios.php" class="<?= $mn('formularios') ?>"><i class="fa-solid fa-file-lines"></i> Declaraciones de datos</a>
+            <a href="formularios-dinamicos.php" class="<?= $mn('formularios_dinamicos') ?>"><i class="fa-solid fa-list-check"></i> Plantillas</a>
+
+            <div class="empresa-sidebar-section">Comunicación</div>
+            <a href="mensajes-entrada.php" class="<?= $mn('mensajes_entrada') ?>"><i class="fa-solid fa-inbox"></i> Mensajes<?php if ($badge_inbox > 0): ?> <span class="badge bg-danger rounded-pill"><?= $badge_inbox > 99 ? '99+' : $badge_inbox ?></span><?php endif; ?></a>
             <a href="comunicados.php" class="<?= $mn('comunicados') ?>"><i class="fa-solid fa-paper-plane"></i> Comunicados</a>
-            <a href="mensajes-entrada.php" class="<?= $mn('mensajes_entrada') ?>"><i class="fa-solid fa-inbox"></i> Mensajes de empresas<?php if ($badge_inbox > 0): ?> <span class="badge bg-danger rounded-pill"><?= $badge_inbox > 99 ? '99+' : $badge_inbox ?></span><?php endif; ?></a>
-            <a href="solicitudes-proyecto.php" class="<?= $mn('solicitudes') ?>"><i class="fa-solid fa-folder-open"></i> Solicitudes proyecto<?php if ($ministerio_badge_solicitudes > 0): ?> <span class="badge bg-warning text-dark rounded-pill"><?= $ministerio_badge_solicitudes > 99 ? '99+' : $ministerio_badge_solicitudes ?></span><?php endif; ?></a>
-            <a href="graficos.php" class="<?= $mn('graficos') ?>"><i class="fa-solid fa-chart-line"></i> Gráficos y datos</a>
-            <a href="exportar.php" class="<?= $mn('exportar') ?>"><i class="fa-solid fa-download"></i> Exportar datos</a>
 
             <div class="empresa-sidebar-section">Sitio público</div>
             <a href="publicaciones.php" class="<?= $mn('publicaciones') ?>"><i class="fa-solid fa-bullhorn"></i> Publicaciones</a>
             <a href="banners.php" class="<?= $mn('banners') ?>"><i class="fa-solid fa-images"></i> Banners del inicio</a>
-            <a href="nosotros-editar.php" class="<?= $mn('nosotros') ?>"><i class="fa-solid fa-pen-to-square"></i> Página Nosotros</a>
+            <a href="nosotros-editar.php" class="<?= $mn('nosotros') ?>"><i class="fa-solid fa-pen-to-square"></i> Página El Parque</a>
             <a href="estadisticas-config.php" class="<?= $mn('estadisticas') ?>"><i class="fa-solid fa-chart-column"></i> Estadísticas públicas</a>
+
+            <div class="empresa-sidebar-section">Analítica</div>
+            <a href="graficos.php" class="<?= $mn('graficos') ?>"><i class="fa-solid fa-chart-line"></i> Gráficos y datos</a>
+            <a href="exportar.php" class="<?= $mn('exportar') ?>"><i class="fa-solid fa-download"></i> Exportar datos</a>
 
             <div class="empresa-sidebar-section">Tu cuenta</div>
             <a href="notificaciones.php" class="<?= $mn('notificaciones') ?>"><i class="fa-solid fa-bell"></i> Notificaciones<?php if ($badge_notif > 0): ?> <span class="badge bg-primary rounded-pill"><?= $badge_notif > 99 ? '99+' : $badge_notif ?></span><?php endif; ?></a>
@@ -114,14 +120,6 @@ $mn = static function (string $key) use ($ministerio_nav): string {
                 <h1 class="empresa-topbar-title"><?= e($page_title) ?></h1>
             </div>
             <div class="empresa-topbar-actions">
-                <a href="mensajes-entrada.php" class="empresa-icon-btn" title="Mensajes de empresas">
-                    <i class="fa-solid fa-inbox fa-lg"></i>
-                    <?php if ($badge_inbox > 0): ?><span class="badge rounded-pill bg-danger"><?= $badge_inbox > 99 ? '99+' : $badge_inbox ?></span><?php endif; ?>
-                </a>
-                <a href="notificaciones.php" class="empresa-icon-btn" title="Notificaciones">
-                    <i class="fa-solid fa-bell fa-lg"></i>
-                    <?php if ($badge_notif > 0): ?><span class="badge rounded-pill bg-primary"><?= $badge_notif > 99 ? '99+' : $badge_notif ?></span><?php endif; ?>
-                </a>
                 <div class="dropdown empresa-user-dd">
                     <button class="dropdown-toggle btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-circle-user fa-lg text-secondary"></i>

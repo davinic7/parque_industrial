@@ -67,8 +67,10 @@ $nav = static function (string $key) use ($empresa_nav): string {
         </div>
         <nav class="empresa-sidebar-nav">
             <a href="dashboard.php" class="<?= $nav('dashboard') ?>"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
-            <a href="formularios.php" class="<?= $nav('formularios') ?>"><i class="fa-solid fa-file-lines"></i> Formularios</a>
+            <a href="formularios.php" class="<?= $nav('formularios') ?>"><i class="fa-solid fa-file-lines"></i> Mis declaraciones</a>
             <a href="publicaciones.php" class="<?= $nav('publicaciones') ?>"><i class="fa-solid fa-bullhorn"></i> Publicaciones</a>
+            <a href="mensajes.php" class="<?= $nav('mensajes') ?>"><i class="fa-solid fa-inbox"></i> Mensajes<?php if ($badge_msg > 0): ?> <span class="badge bg-danger rounded-pill"><?= $badge_msg > 99 ? '99+' : $badge_msg ?></span><?php endif; ?></a>
+            <a href="notificaciones.php" class="<?= $nav('notificaciones') ?>"><i class="fa-solid fa-bell"></i> Notificaciones<?php if ($badge_notif > 0): ?> <span class="badge bg-primary rounded-pill"><?= $badge_notif > 99 ? '99+' : $badge_notif ?></span><?php endif; ?></a>
         </nav>
         <div class="empresa-sidebar-footer">
             <a href="<?= e(PUBLIC_URL) ?>/" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> Ver sitio público</a>
@@ -83,14 +85,6 @@ $nav = static function (string $key) use ($empresa_nav): string {
                 <h1 class="empresa-topbar-title"><?= e($page_title) ?></h1>
             </div>
             <div class="empresa-topbar-actions">
-                <a href="mensajes.php" class="empresa-icon-btn" title="Mensajes">
-                    <i class="fa-solid fa-envelope fa-lg"></i>
-                    <?php if ($badge_msg > 0): ?><span class="badge rounded-pill bg-danger"><?= $badge_msg > 99 ? '99+' : $badge_msg ?></span><?php endif; ?>
-                </a>
-                <a href="notificaciones.php" class="empresa-icon-btn" title="Notificaciones">
-                    <i class="fa-solid fa-bell fa-lg"></i>
-                    <?php if ($badge_notif > 0): ?><span class="badge rounded-pill bg-primary"><?= $badge_notif > 99 ? '99+' : $badge_notif ?></span><?php endif; ?>
-                </a>
                 <div class="dropdown empresa-user-dd">
                     <button class="dropdown-toggle btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fa-solid fa-circle-user fa-lg text-secondary"></i>
