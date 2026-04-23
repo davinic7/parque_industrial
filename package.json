@@ -1,0 +1,16 @@
+{
+  "name": "parque-industrial",
+  "version": "1.0.0",
+  "description": "Aplicación PHP (sitio público, panel empresa y panel ministerio).",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test_pantanillo.js",
+    "test:fast": "SLOW_MO=0 node test_pantanillo.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "playwright": "^1.59.1"
+  }
+}

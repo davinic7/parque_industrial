@@ -1,5 +1,6 @@
 # Entorno y secretos
 .env
+.env.test
 
 # Logs (mantener carpeta con .gitkeep)
 logs/*.log
@@ -15,3 +16,11 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Testing — solo vive en local
+node_modules/
+package-lock.json
+test_screenshots/
+
+# Claude Code
+.claude/
