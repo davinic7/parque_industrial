@@ -90,10 +90,46 @@ $fmtDec = static function ($v, int $dec = 1): string {
         <p class="text-muted small mb-1">Panel de administración</p>
         <h2 class="h4 mb-0 fw-semibold text-dark">Bienvenido, <?= e($empresa['nombre']) ?></h2>
     </div>
-    <span class="badge badge-estado badge-<?= e($empresa['estado']) ?> align-self-center"><?= ucfirst((string) $empresa['estado']) ?></span>
+    <?php
+    $estado_labels = [
+        'pendiente' => 'Pendiente de verificación',
+        'activa'    => 'Activa',
+        'inactiva'  => 'Inactiva',
+    ];
+    $estado_tips = [
+        'pendiente' => 'El Ministerio aún no verificó su empresa. Mientras tanto puede completar su perfil.',
+        'activa'    => 'Su empresa está activa y visible en el directorio público.',
+        'inactiva'  => 'Su empresa está inactiva y no aparece en el directorio.',
+    ];
+    $estado_val = (string) $empresa['estado'];
+    ?>
+    <span class="badge badge-estado badge-<?= e($estado_val) ?> align-self-center"
+          data-bs-toggle="tooltip" title="<?= e($estado_tips[$estado_val] ?? '') ?>">
+        <?= e($estado_labels[$estado_val] ?? ucfirst($estado_val)) ?>
+    </span>
 </div>
 
 <?php show_flash(); ?>
+
+<?php if ($estado_val === 'pendiente'): ?>
+<div class="alert alert-warning d-flex align-items-start gap-3 mb-4 py-3" role="alert">
+    <i class="fa-solid fa-hourglass-half fa-lg mt-1 flex-shrink-0"></i>
+    <div>
+        <strong>Su empresa está pendiente de verificación.</strong>
+        El Ministerio de Producción revisará los datos registrados y activará su cuenta.
+        Mientras tanto, puede completar su perfil para que esté listo cuando sea aprobada.
+        Si tiene dudas, comuníquese con el ministerio a través de <a href="mensajes.php" class="alert-link">Mensajes</a>.
+    </div>
+</div>
+<?php elseif ($estado_val === 'inactiva'): ?>
+<div class="alert alert-secondary d-flex align-items-start gap-3 mb-4 py-3" role="alert">
+    <i class="fa-solid fa-circle-pause fa-lg mt-1 flex-shrink-0"></i>
+    <div>
+        <strong>Su empresa está inactiva.</strong>
+        Su perfil no es visible en el directorio público. Comuníquese con el ministerio para reactivarla.
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="row g-4 mb-4">
     <div class="col-6 col-xl-3">
