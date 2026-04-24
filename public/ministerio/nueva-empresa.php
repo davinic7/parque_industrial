@@ -115,6 +115,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $rubros = $db->query("SELECT nombre FROM rubros WHERE activo = 1 ORDER BY orden, nombre")->fetchAll(PDO::FETCH_COLUMN);
 
+// Prefill desde solicitud (GET params enviados por solicitudes-proyecto.php)
+$pre_nombre   = trim($_GET['prefill_nombre']   ?? '');
+$pre_email    = trim($_GET['prefill_email']    ?? '');
+$pre_contacto = trim($_GET['prefill_contacto'] ?? '');
+$pre_telefono = trim($_GET['prefill_telefono'] ?? '');
+
 $ministerio_nav = 'nueva_empresa';
 require_once BASEPATH . '/includes/ministerio_layout_header.php';
 ?>
@@ -140,7 +146,7 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Nombre comercial *</label>
-                                    <input type="text" name="nombre" class="form-control" required value="<?= e($_POST['nombre'] ?? '') ?>">
+                                    <input type="text" name="nombre" class="form-control" required value="<?= e($_POST['nombre'] ?? $pre_nombre) ?>">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Rubro *</label>
@@ -179,7 +185,10 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label">Email de acceso *</label>
-                                    <input type="email" name="email_usuario" class="form-control" required value="<?= e($_POST['email_usuario'] ?? '') ?>">
+                                    <input type="email" name="email_usuario" class="form-control" required value="<?= e($_POST['email_usuario'] ?? $pre_email) ?>">
+                                    <?php if ($pre_nombre || $pre_email): ?>
+                                    <div class="form-text text-success"><i class="fa-solid fa-circle-check me-1"></i>Datos pre-cargados desde la solicitud.</div>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Estado inicial</label>
