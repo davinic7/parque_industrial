@@ -93,6 +93,7 @@ $nav = static function (string $key) use ($empresa_nav): string {
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li class="px-3 py-2 small text-muted border-bottom mb-1"><?= e($user_email) ?></li>
                         <li><a class="dropdown-item" href="perfil.php"><i class="fa-solid fa-building me-2"></i>Mi perfil</a></li>
+                        <li><a class="dropdown-item" href="cambiar-contrasena.php"><i class="fa-solid fa-lock me-2"></i>Cambiar contraseña</a></li>
                         <li><a class="dropdown-item" href="mensajes.php"><i class="fa-solid fa-inbox me-2"></i>Mensajes<?php if ($badge_msg > 0): ?> <span class="badge bg-danger ms-1"><?= (int) $badge_msg ?></span><?php endif; ?></a></li>
                         <li><a class="dropdown-item" href="notificaciones.php"><i class="fa-solid fa-bell me-2"></i>Notificaciones<?php if ($badge_notif > 0): ?> <span class="badge bg-primary ms-1"><?= (int) $badge_notif ?></span><?php endif; ?></a></li>
                         <li><hr class="dropdown-divider"></li>
