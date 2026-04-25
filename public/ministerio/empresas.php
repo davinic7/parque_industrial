@@ -60,8 +60,12 @@ $offset = ($pagination['current_page'] - 1) * ADMIN_ITEMS_PER_PAGE;
 
 $stmt = $db->prepare("
     SELECT e.*,
-        (SELECT de.estado FROM datos_empresa de WHERE de.empresa_id = e.id ORDER BY de.periodo DESC LIMIT 1) as form_estado
+        (SELECT de.estado FROM datos_empresa de WHERE de.empresa_id = e.id ORDER BY de.periodo DESC LIMIT 1) as form_estado,
+        u.email as usuario_email,
+        u.activo as usuario_activo,
+        u.token_activacion
     FROM empresas e
+    LEFT JOIN usuarios u ON u.id = e.usuario_id
     $where_sql
     ORDER BY e.nombre ASC
     LIMIT " . ADMIN_ITEMS_PER_PAGE . " OFFSET $offset
@@ -149,6 +153,16 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                                 <div class="btn-group btn-group-sm">
                                     <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
                                     <ul class="dropdown-menu">
+                                        <?php if (!empty($emp['token_activacion']) && !$emp['usuario_activo']): ?>
+                                        <?php $url_act = rtrim(PUBLIC_URL, '/') . '/activar-cuenta.php?token=' . urlencode($emp['token_activacion']); ?>
+                                        <li>
+                                            <button type="button" class="dropdown-item text-primary btn-copiar-link"
+                                                    data-url="<?= e($url_act) ?>">
+                                                <i class="bi bi-link-45deg me-2"></i>Copiar enlace de activación
+                                            </button>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <?php endif; ?>
                                         <li><form method="POST" class="d-inline"><?= csrf_field() ?><input type="hidden" name="empresa_id" value="<?= $emp['id'] ?>"><button name="accion" value="activar" class="dropdown-item"><i class="bi bi-check-circle me-2"></i>Activar</button></form></li>
                                         <li><form method="POST" class="d-inline"><?= csrf_field() ?><input type="hidden" name="empresa_id" value="<?= $emp['id'] ?>"><button name="accion" value="suspender" class="dropdown-item"><i class="bi bi-pause-circle me-2"></i>Suspender</button></form></li>
                                         <li><hr class="dropdown-divider"></li>
@@ -165,4 +179,21 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
 
         <?= render_pagination($pagination) ?>
 
-<?php require_once BASEPATH . '/includes/ministerio_layout_footer.php'; ?>
+<?php
+$extra_scripts = <<<'JS'
+<script>
+document.querySelectorAll('.btn-copiar-link').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var url = this.dataset.url;
+        navigator.clipboard.writeText(url).then(function() {
+            var orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check2 me-2"></i>¡Copiado!';
+            setTimeout(function() { btn.innerHTML = orig; }, 2000);
+        }).catch(function() {
+            prompt('Copiá el enlace manualmente:', url);
+        });
+    });
+});
+</script>
+JS;
+require_once BASEPATH . '/includes/ministerio_layout_footer.php';
