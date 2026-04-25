@@ -21,6 +21,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
                    ->execute([$estado, trim($_POST['observaciones'] ?? ''), $id]);
                 set_flash('success', 'Solicitud actualizada.');
             }
+        } elseif ($accion === 'enviar_mensaje') {
+            // Enviar mensaje interno al usuario de la solicitud (por email de contacto)
+            $sol_id   = $id;
+            $asunto   = trim($_POST['msg_asunto']   ?? '');
+            $contenido = trim($_POST['msg_contenido'] ?? '');
+            if ($asunto !== '' && $contenido !== '') {
+                // Buscar usuario por email de contacto de la solicitud
+                $sol = $db->prepare("SELECT * FROM solicitudes_proyecto WHERE id = ?");
+                $sol->execute([$sol_id]);
+                $solicitud = $sol->fetch();
+                if ($solicitud) {
+                    $user_ministerio = $_SESSION['user_id'];
+                    $dest = $db->prepare("SELECT u.id, e.id as emp_id FROM usuarios u LEFT JOIN empresas e ON e.usuario_id = u.id WHERE u.email = ?");
+                    $dest->execute([$solicitud['email']]);
+                    $dest_user = $dest->fetch();
+
+                    if ($dest_user) {
+                        // Usuario registrado: mensaje interno
+                        $db->prepare("INSERT INTO mensajes (remitente_id, destinatario_id, empresa_id, asunto, contenido) VALUES (?, ?, ?, ?, ?)")
+                           ->execute([$user_ministerio, $dest_user['id'], $dest_user['emp_id'], $asunto, $contenido]);
+                        // Marcar solicitud como contactada
+                        $db->prepare("UPDATE solicitudes_proyecto SET estado = 'contactada' WHERE id = ?")->execute([$sol_id]);
+                        set_flash('success', 'Mensaje enviado al panel de la empresa y solicitud marcada como contactada.');
+                    } else {
+                        // No tiene cuenta: enviar email directo vía Resend
+                        $cuerpo  = $contenido . "\n\n---\nParque Industrial de Catamarca — Ministerio de Producción";
+                        if (resend_send_email($solicitud['email'], $asunto, $cuerpo)) {
+                            $db->prepare("UPDATE solicitudes_proyecto SET estado = 'contactada' WHERE id = ?")->execute([$sol_id]);
+                            set_flash('success', 'Email enviado correctamente y solicitud marcada como contactada.');
+                        } else {
+                            set_flash('error', 'No se pudo enviar el email. Verificá la configuración de RESEND_API_KEY.');
+                        }
+                    }
+                }
+            } else {
+                set_flash('error', 'Completá el asunto y el mensaje antes de enviar.');
+            }
         } elseif ($accion === 'archivar') {
             $db->prepare("UPDATE solicitudes_proyecto SET estado = 'cerrada' WHERE id = ?")->execute([$id]);
             set_flash('success', 'Solicitud archivada.');
@@ -242,9 +279,9 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                     </div>
                 </div>
                 <div class="modal-footer flex-wrap gap-2">
-                    <a id="mBtnEmail" href="#" class="btn btn-outline-secondary btn-sm">
-                        <i class="fa-solid fa-envelope me-1"></i>Enviar email
-                    </a>
+                    <button type="button" id="mBtnEmail" class="btn btn-outline-primary btn-sm">
+                        <i class="fa-solid fa-envelope me-1"></i>Enviar mensaje
+                    </button>
                     <a id="mBtnEmpresa" href="#" class="btn btn-success btn-sm">
                         <i class="fa-solid fa-building-circle-check me-1"></i>Registrar como empresa
                     </a>
@@ -254,6 +291,46 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                             <i class="fa-solid fa-floppy-disk me-1"></i>Guardar
                         </button>
                     </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal enviar mensaje -->
+<div class="modal fade" id="modalMensaje" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-envelope me-2"></i>Enviar mensaje</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="formMensaje">
+                <?= csrf_field() ?>
+                <input type="hidden" name="accion" value="enviar_mensaje">
+                <input type="hidden" name="id" id="msgSolId">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        Si el solicitante ya tiene cuenta en el sistema el mensaje llegará a su panel.
+                        Si no tiene cuenta, se le enviará por email.
+                        Destino: <strong id="msgDestino"></strong>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Asunto</label>
+                        <input type="text" name="msg_asunto" id="msgAsunto" class="form-control" required
+                               placeholder="Asunto del mensaje...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Mensaje</label>
+                        <textarea name="msg_contenido" id="msgContenido" class="form-control" rows="5"
+                                  required placeholder="Escribí el mensaje..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-paper-plane me-1"></i>Enviar
+                    </button>
                 </div>
             </form>
         </div>
@@ -303,8 +380,16 @@ $extra_scripts = <<<HTML
             });
             document.getElementById('mBtnEmpresa').href =
                 'nueva-empresa.php?' + params.toString();
-            document.getElementById('mBtnEmail').href =
-                'mailto:' + d.email + '?subject=Parque Industrial de Catamarca - Su solicitud de proyecto';
+
+            // Botón "Enviar mensaje" → abre modal de mensaje
+            document.getElementById('mBtnEmail').onclick = function () {
+                bootstrap.Modal.getInstance(document.getElementById('modalDetalle'))?.hide();
+                document.getElementById('msgSolId').value   = d.id;
+                document.getElementById('msgDestino').textContent = d.email;
+                document.getElementById('msgAsunto').value  = 'Re: Solicitud de proyecto - ' + d.nombre;
+                document.getElementById('msgContenido').value = '';
+                new bootstrap.Modal(document.getElementById('modalMensaje')).show();
+            };
 
             // Mark as vista silently if nueva
             if (d.estado === 'nueva') {
