@@ -261,13 +261,13 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
 </div>
 
 <?php
-$csrf_name = CSRF_TOKEN_NAME;
-$csrf_val  = $_SESSION[CSRF_TOKEN_NAME] ?? '';
+$csrf_name_json = json_encode(CSRF_TOKEN_NAME);
+$csrf_val_json  = json_encode($_SESSION[CSRF_TOKEN_NAME] ?? '');
 $extra_scripts = <<<HTML
 <script>
 (function () {
-    const CSRF_NAME = <?= json_encode($csrf_name) ?>;
-    const CSRF_VAL  = <?= json_encode($csrf_val) ?>;
+    const CSRF_NAME = {$csrf_name_json};
+    const CSRF_VAL  = {$csrf_val_json};
 
     document.querySelectorAll('.btn-ver').forEach(btn => {
         btn.addEventListener('click', function () {
