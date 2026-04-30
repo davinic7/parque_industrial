@@ -24,3 +24,7 @@ test_screenshots/
 
 # Claude Code
 .claude/
+
+# Scripts auxiliares de generacion (no afectan a la app)
+gen_*.ps1
+gen_*.js
