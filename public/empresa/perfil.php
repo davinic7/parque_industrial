@@ -70,6 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $field_errors['logo'] = $upload['error'];
                         }
                     }
+                } else {
+                    // Si hay errores de validación pero el usuario subió un logo nuevo,
+                    // el archivo NO se guarda (lo cual es correcto). Avisamos al usuario para que
+                    // sepa que debe volver a seleccionarlo: el navegador limpia el <input type="file">
+                    // tras el POST, lo cual confunde y hace pensar que se "borró" el logo.
+                    if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
+                        $field_errors['logo_warning'] = 'El logo seleccionado no se guardó porque había errores en el formulario. Su logo actual permanece intacto. Vuelva a seleccionar el archivo cuando corrija los datos.';
+                    }
 
                     if (empty($field_errors)) {
                         $cuit_guardar = ($cuit_digits !== '') ? format_cuit_argentina($cuit_digits) : '';
@@ -334,9 +342,17 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
                     ?>
                     <img id="logoPreview" src="<?= $logo_src ?>" alt="Logo"
                          class="img-fluid rounded d-block mx-auto mb-3" style="max-height: 130px; background: #f8f9fa;">
+                    <?php if (!empty($empresa['logo'])): ?>
+                    <small class="d-block text-muted mb-2"><i class="fa-solid fa-circle-check text-success me-1"></i>Logo actual guardado</small>
+                    <?php endif; ?>
                     <input type="file" name="logo" class="form-control<?= isset($field_errors['logo']) ? ' is-invalid' : '' ?>" accept="image/*">
                     <?php if (isset($field_errors['logo'])): ?>
                     <div class="invalid-feedback d-block text-start"><?= e($field_errors['logo']) ?></div>
+                    <?php elseif (isset($field_errors['logo_warning'])): ?>
+                    <div class="alert alert-warning small text-start mt-2 mb-0 py-2 px-3">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                        <?= e($field_errors['logo_warning']) ?>
+                    </div>
                     <?php else: ?>
                     <?php $logo_max_mb = max(1, (int) ceil(MAX_FILE_SIZE / 1048576)); ?>
                     <small class="text-muted">JPG, PNG, GIF, WebP. Máx. <?= $logo_max_mb ?> MB.</small>

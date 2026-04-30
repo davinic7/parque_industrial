@@ -59,7 +59,7 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
                         <div class="alert alert-danger"><?= e($error) ?></div>
                     <?php endif; ?>
 
-                    <form method="post" autocomplete="off" novalidate>
+                    <form id="form-cambiar-pass" method="post" autocomplete="off" novalidate>
                         <?= csrf_field() ?>
 
                         <div class="mb-3">
@@ -83,7 +83,7 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
 
                         <div class="d-grid gap-2 d-sm-flex justify-content-sm-end">
                             <a href="perfil.php" class="btn btn-secondary">Cancelar</a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="button" class="btn btn-primary" id="btn-abrir-confirm">
                                 <i class="fa-solid fa-floppy-disk me-1"></i> Guardar contraseña
                             </button>
                         </div>
@@ -94,5 +94,61 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
         </div>
     </div>
 </div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="modalConfirmarPass" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-shield-halved me-2 text-warning"></i>Confirmar cambio de contraseña</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea cambiar su contraseña?</p>
+                <p class="mb-0 text-muted small">
+                    <i class="fa-solid fa-info-circle me-1"></i>
+                    Tras confirmar, deberá usar la nueva contraseña en su próximo inicio de sesión. La contraseña anterior dejará de ser válida.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-confirmar-pass">
+                    <i class="fa-solid fa-check me-1"></i> Sí, cambiar contraseña
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const form        = document.getElementById('form-cambiar-pass');
+    const btnAbrir    = document.getElementById('btn-abrir-confirm');
+    const btnConfirm  = document.getElementById('btn-confirmar-pass');
+    const modalEl     = document.getElementById('modalConfirmarPass');
+    const modal       = new bootstrap.Modal(modalEl);
+
+    btnAbrir.addEventListener('click', function () {
+        // Validación HTML5 nativa antes de abrir el modal: si falta algún campo o no
+        // matchea minlength, mostramos los mensajes del navegador en lugar del modal.
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        const nueva   = document.getElementById('password_nueva').value;
+        const confirm = document.getElementById('password_confirmacion').value;
+        if (nueva !== confirm) {
+            alert('La nueva contraseña y su confirmación no coinciden.');
+            return;
+        }
+        modal.show();
+    });
+
+    btnConfirm.addEventListener('click', function () {
+        modal.hide();
+        form.submit();
+    });
+})();
+</script>
 
 <?php require_once BASEPATH . '/includes/empresa_layout_footer.php'; ?>
