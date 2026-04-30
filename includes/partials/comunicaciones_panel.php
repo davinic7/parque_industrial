@@ -288,12 +288,17 @@ $coms_empresas_destino      = $coms_empresas_destino      ?? [];
                     <div id="coms-attachments-preview" class="mb-2 d-flex flex-wrap gap-2"></div>
                     <textarea id="coms-editor-text" class="form-control" placeholder="Escriba su mensaje..."></textarea>
                     <div class="editor-toolbar justify-content-between">
-                        <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
                             <input type="file" id="coms-file-input" multiple class="d-none">
                             <button class="btn btn-sm btn-outline-secondary" id="coms-attach-btn">
                                 <i class="bi bi-paperclip"></i> Adjuntar
                             </button>
-                            <small class="text-muted ms-2">Hasta 25 MB en total</small>
+                            <?php if ($coms_actor === 'ministerio'): ?>
+                            <button class="btn btn-sm btn-outline-info" id="coms-plantilla-btn" title="Insertar plantilla de respuesta">
+                                <i class="bi bi-file-earmark-text"></i> Plantilla
+                            </button>
+                            <?php endif; ?>
+                            <small class="text-muted">Hasta 25 MB en total</small>
                         </div>
                         <button class="btn btn-primary btn-sm" id="coms-send-btn">
                             <i class="bi bi-send"></i> Enviar
@@ -359,6 +364,32 @@ $coms_empresas_destino      = $coms_empresas_destino      ?? [];
         </div>
     </div>
 </div>
+
+<?php if ($coms_actor === 'ministerio'): ?>
+<!-- Modal: elegir plantilla -->
+<div class="modal fade" id="coms-modal-plantilla" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-file-earmark-text me-2"></i>Plantillas de respuesta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="p-2 border-bottom">
+                    <input type="text" class="form-control form-control-sm" id="coms-plantilla-search" placeholder="Buscar plantilla...">
+                </div>
+                <div id="coms-plantilla-list" style="max-height:360px;overflow-y:auto;">
+                    <div class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Cargando...</div>
+                </div>
+            </div>
+            <div class="modal-footer justify-content-between">
+                <a href="plantillas.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-gear me-1"></i>Gestionar plantillas</a>
+                <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <script>
 (function () {
@@ -687,6 +718,63 @@ $coms_empresas_destino      = $coms_empresas_destino      ?? [];
             abrirConversacion(data.conversacion_id);
         } catch (e) { alert(e.message); }
     });
+
+    // ============== Plantillas (solo ministerio) ==============
+    const $plantillaBtn = document.getElementById('coms-plantilla-btn');
+    if ($plantillaBtn) {
+        const modalPlantilla = new bootstrap.Modal(document.getElementById('coms-modal-plantilla'));
+        const $plantillaList = document.getElementById('coms-plantilla-list');
+        const $plantillaSearch = document.getElementById('coms-plantilla-search');
+        let plantillasData = [];
+
+        async function cargarPlantillas() {
+            $plantillaList.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> Cargando...</div>';
+            try {
+                const r = await fetch(`${API_BASE}/plantillas.php`, { credentials: 'same-origin' });
+                const data = await r.json();
+                plantillasData = data.ok ? data.plantillas : [];
+            } catch (e) { plantillasData = []; }
+            renderPlantillas('');
+        }
+
+        function renderPlantillas(buscar) {
+            const filtradas = buscar
+                ? plantillasData.filter(p => p.titulo.toLowerCase().includes(buscar) || p.contenido.toLowerCase().includes(buscar))
+                : plantillasData;
+            if (!filtradas.length) {
+                $plantillaList.innerHTML = '<div class="text-center text-muted py-4">No hay plantillas disponibles.</div>';
+                return;
+            }
+            $plantillaList.innerHTML = filtradas.map(p => {
+                const preview = p.contenido.replace(/\\n/g, ' ').substring(0, 90);
+                return `<div class="px-3 py-2 border-bottom coms-plantilla-item" role="button" data-idx="${p.id}" style="cursor:pointer;">
+                    <div class="fw-semibold small">${esc(p.titulo)}</div>
+                    <div class="text-muted" style="font-size:.75rem;">${esc(preview)}…</div>
+                    <span class="badge bg-secondary" style="font-size:.65rem;">${esc(p.categoria)}</span>
+                </div>`;
+            }).join('');
+            $plantillaList.querySelectorAll('.coms-plantilla-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    const p = plantillasData.find(x => String(x.id) === el.dataset.idx);
+                    if (p) {
+                        const texto = p.contenido.replace(/\\n/g, '\n');
+                        $editorText.value = $editorText.value ? $editorText.value + '\n\n' + texto : texto;
+                        $editorText.focus();
+                        modalPlantilla.hide();
+                    }
+                });
+            });
+        }
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+        $plantillaBtn.addEventListener('click', () => {
+            cargarPlantillas();
+            $plantillaSearch.value = '';
+            modalPlantilla.show();
+        });
+        $plantillaSearch.addEventListener('input', () => renderPlantillas($plantillaSearch.value.toLowerCase()));
+    }
 
     // ============== Init ==============
     cargarLista();

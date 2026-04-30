@@ -102,6 +102,7 @@ $mn = static function (string $key) use ($ministerio_nav): string {
             <div class="empresa-sidebar-section">Comunicación</div>
             <?php if ($coms_activo): ?>
             <a href="comunicaciones.php" class="<?= $mn('comunicaciones') ?>"><i class="fa-solid fa-comments"></i> Comunicaciones <span class="badge bg-danger rounded-pill<?= $badge_coms === 0 ? ' d-none' : '' ?>" id="coms-badge-sidebar"><?= $badge_coms > 99 ? '99+' : $badge_coms ?></span></a>
+            <a href="plantillas.php" class="<?= $mn('plantillas') ?>"><i class="fa-solid fa-file-lines"></i> Plantillas</a>
             <?php else: ?>
             <a href="mensajes-entrada.php" class="<?= $mn('mensajes_entrada') ?>"><i class="fa-solid fa-inbox"></i> Mensajes<?php if ($badge_inbox > 0): ?> <span class="badge bg-danger rounded-pill"><?= $badge_inbox > 99 ? '99+' : $badge_inbox ?></span><?php endif; ?></a>
             <a href="comunicados.php" class="<?= $mn('comunicados') ?>"><i class="fa-solid fa-paper-plane"></i> Comunicados</a>
