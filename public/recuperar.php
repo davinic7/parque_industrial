@@ -19,8 +19,17 @@ if ($token) {
     $usuario = $stmt->fetch();
 
     if (!$usuario) {
-        $error = 'El enlace de recuperación no es válido o ha expirado.';
+        $error = 'El enlace de recuperación no es válido o ha expirado. Solicite uno nuevo desde el formulario.';
     } else {
+        // Si hay otra sesión activa que NO es la del usuario que está recuperando,
+        // cerrarla para evitar que el reset termine redirigiendo al dashboard del otro usuario.
+        if (!empty($_SESSION['user_id']) && (int)$_SESSION['user_id'] !== (int)$usuario['id']) {
+            $auth->logout();
+            session_start();
+            // regenerar CSRF para la sesión limpia
+            $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
+        }
+
         $mostrar_reset = true;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
@@ -34,7 +43,15 @@ if ($token) {
             } else {
                 $result = $auth->resetPassword($token, $password);
                 if ($result['success']) {
-                    set_flash('success', 'Contraseña actualizada correctamente. Puede iniciar sesión.');
+                    // Tras un reset exitoso, garantizamos que NO quede ninguna sesión
+                    // residual del navegador (admin u otra empresa) que pueda redirigir
+                    // al dashboard equivocado al llegar a login.php.
+                    if (!empty($_SESSION['user_id'])) {
+                        $auth->logout();
+                        session_start();
+                        $_SESSION[CSRF_TOKEN_NAME] = bin2hex(random_bytes(32));
+                    }
+                    set_flash('success', 'Contraseña actualizada correctamente. Puede iniciar sesión con su nueva contraseña.');
                     redirect(PUBLIC_URL . '/login.php');
                 } else {
                     $error = $result['error'] ?? 'Error al actualizar la contraseña.';

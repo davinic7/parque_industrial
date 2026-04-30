@@ -52,10 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-card">
         <h1><i class="bi bi-building me-2"></i>Parque Industrial</h1>
         
+        <?php show_flash(); ?>
+
         <?php if ($error): ?>
         <div class="alert alert-danger"><?= e($error) ?></div>
         <?php endif; ?>
-        
+
         <form method="POST">
             <?= csrf_field() ?>
             <div class="mb-3">

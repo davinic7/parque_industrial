@@ -176,7 +176,7 @@ function cloudinary_upload_image(string $file_path): ?string {
  * Sube un archivo arbitrario (p. ej. PDF) a Cloudinary como recurso raw; devuelve secure_url o null.
  * Imprescindible en hosts con disco efímero (p. ej. Render): los PDF en public/uploads desaparecen al redeploy.
  */
-function cloudinary_upload_raw(string $file_path): ?string {
+function cloudinary_upload_raw(string $file_path, string $original_name = ''): ?string {
     if (!cloudinary_configured() || !is_readable($file_path)) {
         return null;
     }
@@ -188,16 +188,27 @@ function cloudinary_upload_raw(string $file_path): ?string {
     $api_key = CLOUDINARY_API_KEY;
     $api_secret = CLOUDINARY_API_SECRET;
     $timestamp = time();
-    $signature = sha1('timestamp=' . $timestamp . $api_secret);
+    // Incluir use_filename y unique_filename en la firma (orden alfabético)
+    $signature = sha1('timestamp=' . $timestamp . '&unique_filename=1&use_filename=1' . $api_secret);
+
+    // Asegurar que el nombre enviado a Cloudinary tenga extensión .pdf
+    $upload_name = $original_name !== '' ? $original_name : basename($file_path);
+    if (strtolower(pathinfo($upload_name, PATHINFO_EXTENSION)) !== 'pdf') {
+        $upload_name = pathinfo($upload_name, PATHINFO_FILENAME) . '.pdf';
+    }
+    $upload_name = preg_replace('/[^a-zA-Z0-9._\-]/', '_', $upload_name);
+
     $endpoint = 'https://api.cloudinary.com/v1_1/' . $cloud_name . '/raw/upload';
     $ch = curl_init($endpoint);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, [
-        'file' => new CURLFile($file_path, 'application/pdf', basename($file_path)),
-        'api_key' => $api_key,
-        'timestamp' => $timestamp,
-        'signature' => $signature,
+        'file'            => new CURLFile($file_path, 'application/pdf', $upload_name),
+        'api_key'         => $api_key,
+        'timestamp'       => $timestamp,
+        'signature'       => $signature,
+        'use_filename'    => '1',
+        'unique_filename' => '1',
     ]);
     $response = curl_exec($ch);
     $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -403,7 +414,7 @@ function upload_pdf_batch(array $fileStructs, string $directory = 'mensajes', in
         }
 
         if (cloudinary_configured()) {
-            $cloudUrl = cloudinary_upload_raw($file['tmp_name']);
+            $cloudUrl = cloudinary_upload_raw($file['tmp_name'], $file['name'] ?? '');
             if ($cloudUrl !== null) {
                 $saved[] = $cloudUrl;
                 continue;
@@ -705,11 +716,12 @@ function client_ip(): string {
 }
 
 /**
- * Indica si hay soporte para enviar correos (Resend API key configurada).
+ * Indica si hay soporte para enviar correos (Resend o Gmail configurados).
  */
 function can_send_mail(): bool {
-    $key = getenv('RESEND_API_KEY');
-    return !empty($key);
+    if (!empty(getenv('RESEND_API_KEY'))) return true;
+    if (!empty(getenv('GMAIL_USER')) && !empty(getenv('GMAIL_APP_PASSWORD'))) return true;
+    return false;
 }
 
 /**
@@ -717,7 +729,7 @@ function can_send_mail(): bool {
  * Requiere RESEND_API_KEY en variables de entorno.
  * Retorna true si Resend aceptó el mensaje (HTTP 200).
  */
-function resend_send_email(string $to, string $subject, string $body): bool {
+function resend_send_email(string $to, string $subject, string $body, ?string $html_body = null): bool {
     $api_key = getenv('RESEND_API_KEY');
     if (empty($api_key)) {
         error_log("resend_send_email: RESEND_API_KEY no configurada");
@@ -726,12 +738,16 @@ function resend_send_email(string $to, string $subject, string $body): bool {
 
     $from = getenv('MAIL_FROM') ?: 'no-reply@parqueindustrial.gob.ar';
 
-    $payload = json_encode([
+    $payload_data = [
         'from'    => 'Parque Industrial <' . $from . '>',
         'to'      => [$to],
         'subject' => $subject,
         'text'    => $body,
-    ]);
+    ];
+    if ($html_body !== null && $html_body !== '') {
+        $payload_data['html'] = $html_body;
+    }
+    $payload = json_encode($payload_data);
 
     $ch = curl_init('https://api.resend.com/emails');
     curl_setopt_array($ch, [
@@ -761,6 +777,81 @@ function resend_send_email(string $to, string $subject, string $body): bool {
 }
 
 /**
+ * Envía email vía Gmail SMTP usando cURL + SMTPS (puerto 465).
+ * Requiere GMAIL_USER y GMAIL_APP_PASSWORD en el entorno.
+ */
+function gmail_send_email(string $to, string $subject, string $body, ?string $html_body = null): bool {
+    $user = getenv('GMAIL_USER');
+    $pass = getenv('GMAIL_APP_PASSWORD');
+    if (!$user || !$pass) {
+        error_log('gmail_send_email: GMAIL_USER o GMAIL_APP_PASSWORD no configurados');
+        return false;
+    }
+
+    $date = date('r');
+    $name = 'Parque Industrial';
+
+    if ($html_body !== null && $html_body !== '') {
+        $boundary = 'pi_' . bin2hex(random_bytes(8));
+        $headers  = "Date: $date\r\nTo: <$to>\r\nFrom: $name <$user>\r\nSubject: $subject\r\n"
+                  . "MIME-Version: 1.0\r\n"
+                  . "Content-Type: multipart/alternative; boundary=\"$boundary\"\r\n\r\n";
+        $raw  = $headers;
+        $raw .= "--$boundary\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n$body\r\n";
+        $raw .= "--$boundary\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n$html_body\r\n";
+        $raw .= "--$boundary--\r\n";
+    } else {
+        $raw = "Date: $date\r\nTo: <$to>\r\nFrom: $name <$user>\r\n"
+             . "Subject: $subject\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n$body";
+    }
+
+    $stream = fopen('php://temp', 'rw');
+    fwrite($stream, $raw);
+    rewind($stream);
+
+    $ch = curl_init('smtps://smtp.gmail.com:465');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_UPLOAD         => true,
+        CURLOPT_MAIL_FROM      => "<$user>",
+        CURLOPT_MAIL_RCPT      => ["<$to>"],
+        CURLOPT_READDATA       => $stream,
+        CURLOPT_INFILESIZE     => strlen($raw),
+        CURLOPT_USERNAME       => $user,
+        CURLOPT_PASSWORD       => $pass,
+        CURLOPT_TIMEOUT        => 20,
+        CURLOPT_SSL_VERIFYPEER => true,
+    ]);
+    curl_exec($ch);
+    $curl_err = curl_error($ch);
+    $curl_no  = curl_errno($ch);
+    curl_close($ch);
+    fclose($stream);
+
+    if ($curl_err) {
+        error_log("gmail_send_email: curl error $curl_no — $curl_err");
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Envía email usando Resend si está configurado, si no intenta Gmail SMTP.
+ */
+function send_email(string $to, string $subject, string $body, ?string $html_body = null): bool {
+    if (!empty(getenv('RESEND_API_KEY'))) {
+        $ok = resend_send_email($to, $subject, $body, $html_body);
+        if ($ok) return true;
+        error_log("send_email: Resend falló para $to, intentando Gmail");
+    }
+    if (!empty(getenv('GMAIL_USER')) && !empty(getenv('GMAIL_APP_PASSWORD'))) {
+        return gmail_send_email($to, $subject, $body, $html_body);
+    }
+    error_log("send_email: ningún proveedor de email configurado");
+    return false;
+}
+
+/**
  * Email de activación de cuenta empresa (enlace con token).
  */
 function enviar_email_activacion_empresa(string $destino_email, string $nombre_empresa, string $url_activacion): bool {
@@ -771,7 +862,7 @@ function enviar_email_activacion_empresa(string $destino_email, string $nombre_e
     $cuerpo .= "$url_activacion\n\n";
     $cuerpo .= "Si usted no solicitó este registro, ignore este mensaje.\n\n";
     $cuerpo .= "Saludos cordiales,\nMinisterio de Producción — Parque Industrial de Catamarca";
-    $ok = resend_send_email($destino_email, $asunto, $cuerpo);
+    $ok = send_email($destino_email, $asunto, $cuerpo);
     if (!$ok) error_log("enviar_email_activacion: fallo al enviar a $destino_email");
     return $ok;
 }
@@ -781,12 +872,36 @@ function enviar_email_activacion_empresa(string $destino_email, string $nombre_e
  */
 function enviar_email_recuperacion_password(string $destino_email, string $url_reset): bool {
     $asunto  = 'Restablecer contraseña - Parque Industrial';
+
+    // Texto plano: el enlace va envuelto entre < > para que clientes que auto-linkifican
+    // (Outlook, Gmail) no incluyan el salto de línea ni el punto final dentro del href.
     $cuerpo  = "Recibimos una solicitud para restablecer la contraseña de su cuenta.\n\n";
     $cuerpo .= "Si fue usted, abra este enlace (válido por 1 hora):\n\n";
-    $cuerpo .= "$url_reset\n\n";
+    $cuerpo .= "<$url_reset>\n\n";
     $cuerpo .= "Si no solicitó el cambio, ignore este correo.\n\n";
     $cuerpo .= "Parque Industrial de Catamarca";
-    $ok = resend_send_email($destino_email, $asunto, $cuerpo);
+
+    // HTML: enlace explícito en <a href>. No depende de auto-linkificación del cliente.
+    $url_html = htmlspecialchars($url_reset, ENT_QUOTES, 'UTF-8');
+    $html  = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head>';
+    $html .= '<body style="font-family:Arial,sans-serif;color:#333;background:#f5f5f5;margin:0;padding:24px;">';
+    $html .= '<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">';
+    $html .= '<h2 style="color:#1a5276;margin-top:0;">Restablecer contraseña</h2>';
+    $html .= '<p>Recibimos una solicitud para restablecer la contraseña de su cuenta.</p>';
+    $html .= '<p>Si fue usted, haga clic en el siguiente botón <strong>(válido por 1 hora)</strong>:</p>';
+    $html .= '<p style="text-align:center;margin:32px 0;">';
+    $html .= '<a href="' . $url_html . '" style="background:#1a5276;color:#fff;padding:14px 28px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;">Restablecer contraseña</a>';
+    $html .= '</p>';
+    $html .= '<p style="font-size:13px;color:#666;">Si el botón no funciona, copie y pegue este enlace en su navegador:</p>';
+    $html .= '<p style="font-size:13px;word-break:break-all;background:#f9f9f9;padding:12px;border-radius:4px;border:1px solid #eee;">';
+    $html .= '<a href="' . $url_html . '" style="color:#1a5276;">' . $url_html . '</a>';
+    $html .= '</p>';
+    $html .= '<hr style="border:none;border-top:1px solid #eee;margin:24px 0;">';
+    $html .= '<p style="font-size:12px;color:#999;">Si no solicitó el cambio, puede ignorar este correo. Su contraseña no se modificará hasta que abra el enlace y la cambie usted mismo.</p>';
+    $html .= '<p style="font-size:12px;color:#999;margin-bottom:0;">Parque Industrial de Catamarca</p>';
+    $html .= '</div></body></html>';
+
+    $ok = send_email($destino_email, $asunto, $cuerpo, $html);
     if (!$ok) error_log("enviar_email_recuperacion: fallo al enviar a $destino_email");
     return $ok;
 }
@@ -799,7 +914,7 @@ function enviar_email_password_cambiada(string $destino_email): bool {
     $cuerpo  = "Le informamos que la contraseña de su cuenta se modificó correctamente.\n\n";
     $cuerpo .= "Si no fue usted, contacte de inmediato al administrador.\n\n";
     $cuerpo .= "Parque Industrial de Catamarca";
-    return resend_send_email($destino_email, $asunto, $cuerpo);
+    return send_email($destino_email, $asunto, $cuerpo);
 }
 
 /**
@@ -811,7 +926,7 @@ function enviar_email_formulario_nuevo(string $destino_email, string $titulo_for
     $cuerpo .= "$titulo_formulario\n\n";
     $cuerpo .= "Acceda desde:\n$url_formulario\n\n";
     $cuerpo .= "Parque Industrial de Catamarca";
-    return resend_send_email($destino_email, $asunto, $cuerpo);
+    return send_email($destino_email, $asunto, $cuerpo);
 }
 
 function enviar_email_credenciales_empresa($destino_email, $nombre_empresa, $password_temporal, $url_login = '') {
@@ -825,7 +940,7 @@ function enviar_email_credenciales_empresa($destino_email, $nombre_empresa, $pas
     $cuerpo .= "Le recomendamos cambiar la contraseña al primer ingreso.\n";
     if ($url_login) $cuerpo .= "\nAcceso al panel: $url_login\n";
     $cuerpo .= "\nSaludos cordiales,\nMinisterio de Producción — Parque Industrial de Catamarca";
-    $ok = resend_send_email($destino_email, $asunto, $cuerpo);
+    $ok = send_email($destino_email, $asunto, $cuerpo);
     if (!$ok) error_log("enviar_credenciales: fallo al enviar email a $destino_email");
     return $ok;
 }

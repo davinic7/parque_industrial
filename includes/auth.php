@@ -237,7 +237,10 @@ class Auth {
                 ");
                 $c->execute([$ip]);
                 if ((int)$c->fetchColumn() >= 3) {
-                    return ['success' => true];
+                    // Rate limit alcanzado. Devolvemos success para no revelar al atacante,
+                    // pero logueamos para que el admin pueda diagnosticar quejas reales.
+                    error_log("requestPasswordReset: rate limit alcanzado para IP $ip (email solicitado: $email). NO se envió mail.");
+                    return ['success' => true, 'rate_limited' => true];
                 }
                 $this->db->prepare("INSERT INTO password_reset_requests (ip) VALUES (?)")->execute([$ip]);
             } catch (Exception $e) {
@@ -309,7 +312,7 @@ class Auth {
                 enviar_email_password_cambiada($rowMail['email']);
             }
 
-            return ['success' => true];
+            return ['success' => true, 'user_id' => (int)$user['id']];
             
         } catch (Exception $e) {
             return ['success' => false, 'error' => 'Error al resetear contraseña'];
