@@ -13,7 +13,7 @@ $por_pagina = 12;
 
 try {
     $db = getDB();
-    $where = ["1=1"];
+    $where = ["estado IN ('activa', 'pendiente')"];
     $params = [];
     
     if ($busqueda) {

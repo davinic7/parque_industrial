@@ -12,7 +12,7 @@ $stats = get_estadisticas_generales();
 // Obtener empresas destacadas
 try {
     $db = getDB();
-    $stmt = $db->query("SELECT * FROM empresas WHERE estado = 'activa' ORDER BY visitas DESC LIMIT 6");
+    $stmt = $db->query("SELECT * FROM empresas WHERE estado IN ('activa', 'pendiente') ORDER BY visitas DESC LIMIT 6");
     $empresas_destacadas = $stmt->fetchAll();
 } catch (Exception $e) {
     $empresas_destacadas = [];
