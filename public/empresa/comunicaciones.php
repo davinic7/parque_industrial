@@ -16,7 +16,7 @@ if (!FEATURE_CENTRO_COMS || !coms_schema_disponible()) {
 }
 
 $page_title = 'Comunicaciones';
-$empresa_nav = '';
+$empresa_nav = 'comunicaciones';
 
 // Variables que consume el partial
 $coms_actor                = 'empresa';

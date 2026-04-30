@@ -17,7 +17,7 @@ if (!FEATURE_CENTRO_COMS || !coms_schema_disponible()) {
 }
 
 $page_title = 'Comunicaciones';
-$ministerio_nav = 'mensajes';
+$ministerio_nav = 'comunicaciones';
 $db = getDB();
 
 // Lista de empresas activas para el selector de destinatario en "Nueva conversacion".

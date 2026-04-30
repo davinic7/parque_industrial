@@ -17,8 +17,13 @@ $user_id = (int) ($_SESSION['user_id'] ?? 0);
 $user_email = $_SESSION['user_email'] ?? '';
 $topbar_name = $user_email !== '' ? $user_email : 'Ministerio';
 
+// Centro de Comunicaciones — cargar helper (idempotente: uses require_once + guards internos)
+require_once BASEPATH . '/includes/comunicaciones.php';
+$coms_activo = FEATURE_CENTRO_COMS && coms_schema_disponible();
+
 $badge_notif = 0;
 $badge_inbox = 0;
+$badge_coms  = 0;
 $db_layout = null;
 try {
     $db_layout = getDB();
@@ -27,8 +32,12 @@ try {
         $st->execute([$user_id]);
         $badge_notif = (int) $st->fetchColumn();
     }
-    $st = $db_layout->query('SELECT COUNT(*) FROM mensajes WHERE destinatario_id IS NULL AND leido = 0');
-    $badge_inbox = $st ? (int) $st->fetchColumn() : 0;
+    if ($coms_activo) {
+        $badge_coms = coms_contar_no_leidos('ministerio', null);
+    } else {
+        $st = $db_layout->query('SELECT COUNT(*) FROM mensajes WHERE destinatario_id IS NULL AND leido = 0');
+        $badge_inbox = $st ? (int) $st->fetchColumn() : 0;
+    }
 } catch (Throwable $e) {
     error_log('ministerio_layout_header: ' . $e->getMessage());
 }
@@ -91,8 +100,12 @@ $mn = static function (string $key) use ($ministerio_nav): string {
             <a href="formularios-dinamicos.php" class="<?= $mn('formularios_dinamicos') ?>"><i class="fa-solid fa-list-check"></i> Plantillas</a>
 
             <div class="empresa-sidebar-section">Comunicación</div>
+            <?php if ($coms_activo): ?>
+            <a href="comunicaciones.php" class="<?= $mn('comunicaciones') ?>"><i class="fa-solid fa-comments"></i> Comunicaciones <span class="badge bg-danger rounded-pill<?= $badge_coms === 0 ? ' d-none' : '' ?>" id="coms-badge-sidebar"><?= $badge_coms > 99 ? '99+' : $badge_coms ?></span></a>
+            <?php else: ?>
             <a href="mensajes-entrada.php" class="<?= $mn('mensajes_entrada') ?>"><i class="fa-solid fa-inbox"></i> Mensajes<?php if ($badge_inbox > 0): ?> <span class="badge bg-danger rounded-pill"><?= $badge_inbox > 99 ? '99+' : $badge_inbox ?></span><?php endif; ?></a>
             <a href="comunicados.php" class="<?= $mn('comunicados') ?>"><i class="fa-solid fa-paper-plane"></i> Comunicados</a>
+            <?php endif; ?>
 
             <div class="empresa-sidebar-section">Sitio público</div>
             <a href="publicaciones.php" class="<?= $mn('publicaciones') ?>"><i class="fa-solid fa-bullhorn"></i> Publicaciones</a>
@@ -127,7 +140,11 @@ $mn = static function (string $key) use ($ministerio_nav): string {
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li class="px-3 py-2 small text-muted border-bottom mb-1"><?= e($user_email) ?></li>
+                        <?php if ($coms_activo): ?>
+                        <li><a class="dropdown-item" href="comunicaciones.php"><i class="fa-solid fa-comments me-2"></i>Comunicaciones <span class="badge bg-danger ms-1<?= $badge_coms === 0 ? ' d-none' : '' ?>" id="coms-badge-topbar"><?= $badge_coms > 99 ? '99+' : (int) $badge_coms ?></span></a></li>
+                        <?php else: ?>
                         <li><a class="dropdown-item" href="mensajes-entrada.php"><i class="fa-solid fa-inbox me-2"></i>Mensajes empresas<?php if ($badge_inbox > 0): ?> <span class="badge bg-danger ms-1"><?= (int) $badge_inbox ?></span><?php endif; ?></a></li>
+                        <?php endif; ?>
                         <li><a class="dropdown-item" href="notificaciones.php"><i class="fa-solid fa-bell me-2"></i>Notificaciones<?php if ($badge_notif > 0): ?> <span class="badge bg-primary ms-1"><?= (int) $badge_notif ?></span><?php endif; ?></a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="<?= e(PUBLIC_URL) ?>/logout.php"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar sesión</a></li>
@@ -136,3 +153,37 @@ $mn = static function (string $key) use ($ministerio_nav): string {
             </div>
         </header>
         <main class="empresa-main">
+<?php if ($coms_activo): ?>
+<script>
+(function () {
+    'use strict';
+    var badgeEls = [
+        document.getElementById('coms-badge-sidebar'),
+        document.getElementById('coms-badge-topbar')
+    ];
+    var apiUrl = '<?= rtrim(PUBLIC_URL, '/') ?>/api/comunicaciones/badge.php';
+
+    function updateBadges(n) {
+        var txt = n > 99 ? '99+' : String(n);
+        badgeEls.forEach(function (el) {
+            if (!el) return;
+            el.textContent = txt;
+            el.classList.toggle('d-none', n === 0);
+        });
+    }
+
+    function fetchBadge() {
+        fetch(apiUrl, { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (data && typeof data.no_leidos === 'number') {
+                    updateBadges(data.no_leidos);
+                }
+            })
+            .catch(function () { /* silencioso */ });
+    }
+
+    setInterval(fetchBadge, 30000);
+}());
+</script>
+<?php endif; ?>

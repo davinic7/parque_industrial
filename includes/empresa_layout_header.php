@@ -17,17 +17,26 @@ $user_id = (int) ($_SESSION['user_id'] ?? 0);
 $empresa_nombre = $_SESSION['empresa_nombre'] ?? 'Mi empresa';
 $user_email = $_SESSION['user_email'] ?? '';
 
+// Centro de Comunicaciones — cargar helper (idempotente: uses require_once + guards internos)
+require_once BASEPATH . '/includes/comunicaciones.php';
+$coms_activo = FEATURE_CENTRO_COMS && coms_schema_disponible();
+
 $badge_notif = 0;
-$badge_msg = 0;
+$badge_msg   = 0;
+$badge_coms  = 0;
 try {
     $db_layout = getDB();
     if ($user_id > 0) {
-        $st = $db_layout->prepare('SELECT COUNT(*) FROM notificaciones WHERE usuario_id = ? AND leida = 0');
-        $st->execute([$user_id]);
-        $badge_notif = (int) $st->fetchColumn();
-        $st = $db_layout->prepare('SELECT COUNT(*) FROM mensajes WHERE destinatario_id = ? AND leido = 0');
-        $st->execute([$user_id]);
-        $badge_msg = (int) $st->fetchColumn();
+        if ($coms_activo) {
+            $badge_coms = coms_contar_no_leidos('empresa', $_SESSION['empresa_id'] ?? null);
+        } else {
+            $st = $db_layout->prepare('SELECT COUNT(*) FROM notificaciones WHERE usuario_id = ? AND leida = 0');
+            $st->execute([$user_id]);
+            $badge_notif = (int) $st->fetchColumn();
+            $st = $db_layout->prepare('SELECT COUNT(*) FROM mensajes WHERE destinatario_id = ? AND leido = 0');
+            $st->execute([$user_id]);
+            $badge_msg = (int) $st->fetchColumn();
+        }
     }
 } catch (Throwable $e) {
     error_log('empresa_layout_header: ' . $e->getMessage());
@@ -69,8 +78,12 @@ $nav = static function (string $key) use ($empresa_nav): string {
             <a href="dashboard.php" class="<?= $nav('dashboard') ?>"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
             <a href="formularios.php" class="<?= $nav('formularios') ?>"><i class="fa-solid fa-file-lines"></i> Mis declaraciones</a>
             <a href="publicaciones.php" class="<?= $nav('publicaciones') ?>"><i class="fa-solid fa-bullhorn"></i> Publicaciones</a>
+            <?php if ($coms_activo): ?>
+            <a href="comunicaciones.php" class="<?= $nav('comunicaciones') ?>"><i class="fa-solid fa-comments"></i> Comunicaciones <span class="badge bg-danger rounded-pill<?= $badge_coms === 0 ? ' d-none' : '' ?>" id="coms-badge-sidebar"><?= $badge_coms > 99 ? '99+' : $badge_coms ?></span></a>
+            <?php else: ?>
             <a href="mensajes.php" class="<?= $nav('mensajes') ?>"><i class="fa-solid fa-inbox"></i> Mensajes<?php if ($badge_msg > 0): ?> <span class="badge bg-danger rounded-pill"><?= $badge_msg > 99 ? '99+' : $badge_msg ?></span><?php endif; ?></a>
             <a href="notificaciones.php" class="<?= $nav('notificaciones') ?>"><i class="fa-solid fa-bell"></i> Notificaciones<?php if ($badge_notif > 0): ?> <span class="badge bg-primary rounded-pill"><?= $badge_notif > 99 ? '99+' : $badge_notif ?></span><?php endif; ?></a>
+            <?php endif; ?>
         </nav>
         <div class="empresa-sidebar-footer">
             <a href="<?= e(PUBLIC_URL) ?>/" target="_blank" rel="noopener"><i class="fa-solid fa-globe"></i> Ver sitio público</a>
@@ -94,8 +107,12 @@ $nav = static function (string $key) use ($empresa_nav): string {
                         <li class="px-3 py-2 small text-muted border-bottom mb-1"><?= e($user_email) ?></li>
                         <li><a class="dropdown-item" href="perfil.php"><i class="fa-solid fa-building me-2"></i>Mi perfil</a></li>
                         <li><a class="dropdown-item" href="cambiar-contrasena.php"><i class="fa-solid fa-lock me-2"></i>Cambiar contraseña</a></li>
+                        <?php if ($coms_activo): ?>
+                        <li><a class="dropdown-item" href="comunicaciones.php"><i class="fa-solid fa-comments me-2"></i>Comunicaciones <span class="badge bg-danger ms-1<?= $badge_coms === 0 ? ' d-none' : '' ?>" id="coms-badge-topbar"><?= $badge_coms > 99 ? '99+' : (int) $badge_coms ?></span></a></li>
+                        <?php else: ?>
                         <li><a class="dropdown-item" href="mensajes.php"><i class="fa-solid fa-inbox me-2"></i>Mensajes<?php if ($badge_msg > 0): ?> <span class="badge bg-danger ms-1"><?= (int) $badge_msg ?></span><?php endif; ?></a></li>
                         <li><a class="dropdown-item" href="notificaciones.php"><i class="fa-solid fa-bell me-2"></i>Notificaciones<?php if ($badge_notif > 0): ?> <span class="badge bg-primary ms-1"><?= (int) $badge_notif ?></span><?php endif; ?></a></li>
+                        <?php endif; ?>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="<?= e(PUBLIC_URL) ?>/logout.php"><i class="fa-solid fa-right-from-bracket me-2"></i>Cerrar sesión</a></li>
                     </ul>
@@ -103,3 +120,37 @@ $nav = static function (string $key) use ($empresa_nav): string {
             </div>
         </header>
         <main class="empresa-main">
+<?php if ($coms_activo): ?>
+<script>
+(function () {
+    'use strict';
+    var badgeEls = [
+        document.getElementById('coms-badge-sidebar'),
+        document.getElementById('coms-badge-topbar')
+    ];
+    var apiUrl = '<?= rtrim(PUBLIC_URL, '/') ?>/api/comunicaciones/badge.php';
+
+    function updateBadges(n) {
+        var txt = n > 99 ? '99+' : String(n);
+        badgeEls.forEach(function (el) {
+            if (!el) return;
+            el.textContent = txt;
+            el.classList.toggle('d-none', n === 0);
+        });
+    }
+
+    function fetchBadge() {
+        fetch(apiUrl, { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (data && typeof data.no_leidos === 'number') {
+                    updateBadges(data.no_leidos);
+                }
+            })
+            .catch(function () { /* silencioso */ });
+    }
+
+    setInterval(fetchBadge, 30000);
+}());
+</script>
+<?php endif; ?>
