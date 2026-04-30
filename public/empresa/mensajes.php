@@ -6,6 +6,12 @@ require_once __DIR__ . '/../../config/config.php';
 
 if (!$auth->requireRole(['empresa'], PUBLIC_URL . '/login.php')) exit;
 
+// Si el Centro de Comunicaciones esta activo, redirigir al nuevo panel.
+require_once BASEPATH . '/includes/comunicaciones.php';
+if (FEATURE_CENTRO_COMS && coms_schema_disponible()) {
+    redirect('comunicaciones.php');
+}
+
 $page_title = 'Mensajes';
 $db = getDB();
 $user_id = (int) ($_SESSION['user_id'] ?? 0);
@@ -29,6 +35,10 @@ function mensajes_decode_adjuntos(?string $json): array {
 }
 
 $error_form = '';
+
+if (($_GET['upload_error'] ?? '') === 'size') {
+    $error_form = 'El archivo adjunto supera el tamaño máximo permitido. Por favor, reducí el tamaño del PDF e intentá nuevamente.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
     $accion = $_POST['accion'] ?? '';
