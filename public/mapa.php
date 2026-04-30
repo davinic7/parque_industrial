@@ -8,7 +8,7 @@ $page_title = 'Mapa del Parque';
 
 try {
     $db = getDB();
-    $stmt = $db->query("SELECT id, nombre, rubro, ubicacion, direccion, telefono, contacto_nombre, latitud, longitud, logo, sitio_web, facebook, instagram, linkedin FROM empresas ORDER BY nombre");
+    $stmt = $db->query("SELECT id, nombre, rubro, ubicacion, direccion, telefono, contacto_nombre, latitud, longitud, logo, sitio_web, facebook, instagram, linkedin FROM empresas WHERE estado IN ('activa', 'pendiente') ORDER BY nombre");
     $empresas = $stmt->fetchAll();
     // Resolver URL del logo para cada empresa
     foreach ($empresas as &$emp) {
@@ -302,20 +302,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Filtros
+    // Filtros — sincroniza lista Y marcadores del mapa
     function filtrar() {
         const busqueda = document.getElementById('searchEmpresa').value.toLowerCase();
         const rubro = document.getElementById('filterRubro').value;
         let visible = 0;
-        
+
         document.querySelectorAll('.empresa-list-item').forEach(item => {
             const nombre = item.dataset.nombre;
             const itemRubro = item.dataset.rubro;
+            const id = item.dataset.id;
             const match = nombre.includes(busqueda) && (!rubro || itemRubro === rubro);
             item.style.display = match ? '' : 'none';
             if (match) visible++;
+
+            // Sincronizar marcador del mapa
+            if (markers[id]) {
+                if (match) {
+                    if (!map.hasLayer(markers[id])) markers[id].addTo(map);
+                } else {
+                    map.removeLayer(markers[id]);
+                }
+            }
         });
-        
+
         document.getElementById('countVisible').textContent = visible;
     }
     
