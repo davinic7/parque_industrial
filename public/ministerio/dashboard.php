@@ -16,7 +16,15 @@ $stats = [
     'publicaciones_revision'=> 0,
     'total_empleados'       => 0,
     'visitas_mes'           => 0,
+    'mensajes_no_leidos'    => 0,
 ];
+
+// Centro de Comunicaciones — badge para el dashboard
+require_once BASEPATH . '/includes/comunicaciones.php';
+$coms_activo = FEATURE_CENTRO_COMS && coms_schema_disponible();
+if ($coms_activo) {
+    try { $stats['mensajes_no_leidos'] = coms_contar_no_leidos('ministerio', null); } catch (Throwable $e) {}
+}
 $rubros_labels = [];
 $rubros_values = [];
 $actividad = [];
@@ -92,6 +100,13 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
             <div class="col-md-4 col-lg-2">
                 <div class="dashboard-card text-center"><i class="bi bi-newspaper fs-2 text-secondary"></i><div class="card-value"><?= $stats['publicaciones_revision'] ?></div><div class="card-label">Por revisar</div></div>
             </div>
+            <?php if ($coms_activo && $stats['mensajes_no_leidos'] > 0): ?>
+            <div class="col-md-4 col-lg-2">
+                <a href="comunicaciones.php" class="text-decoration-none">
+                    <div class="dashboard-card danger text-center"><i class="bi bi-chat-dots fs-2 text-danger"></i><div class="card-value"><?= $stats['mensajes_no_leidos'] ?></div><div class="card-label">Mensajes nuevos</div></div>
+                </a>
+            </div>
+            <?php endif; ?>
         </div>
 
         <div class="row g-4">
@@ -104,6 +119,9 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                             <div class="col-md-3"><a href="formularios.php" class="btn btn-outline-warning w-100 py-3"><i class="bi bi-file-earmark-check d-block fs-3 mb-2"></i>Revisar Formularios</a></div>
                             <div class="col-md-3"><a href="graficos.php" class="btn btn-outline-success w-100 py-3"><i class="bi bi-bar-chart d-block fs-3 mb-2"></i>Ver Gráficos</a></div>
                             <div class="col-md-3"><a href="publicaciones.php" class="btn btn-outline-info w-100 py-3"><i class="bi bi-megaphone d-block fs-3 mb-2"></i>Publicaciones</a></div>
+                            <?php if ($coms_activo): ?>
+                            <div class="col-md-3"><a href="comunicaciones.php" class="btn btn-outline-danger w-100 py-3"><i class="bi bi-chat-dots d-block fs-3 mb-2"></i>Comunicaciones</a></div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

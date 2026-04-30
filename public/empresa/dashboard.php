@@ -118,7 +118,7 @@ $fmtDec = static function ($v, int $dec = 1): string {
         <strong>Su empresa está pendiente de verificación.</strong>
         El Ministerio de Producción revisará los datos registrados y activará su cuenta.
         Mientras tanto, puede completar su perfil para que esté listo cuando sea aprobada.
-        Si tiene dudas, comuníquese con el ministerio a través de <a href="mensajes.php" class="alert-link">Mensajes</a>.
+        Si tiene dudas, comuníquese con el ministerio a través de <a href="<?= $coms_activo ? 'comunicaciones.php' : 'mensajes.php' ?>" class="alert-link"><?= $coms_activo ? 'Comunicaciones' : 'Mensajes' ?></a>.
     </div>
 </div>
 <?php elseif ($estado_val === 'inactiva'): ?>
@@ -271,8 +271,8 @@ $fmtDec = static function ($v, int $dec = 1): string {
     <div class="col-lg-4">
         <div class="card empresa-card-soft mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Notificaciones</span>
-                <a href="notificaciones.php" class="small">Ver todas</a>
+                <span><?= $coms_activo ? 'Comunicaciones' : 'Notificaciones' ?></span>
+                <a href="<?= $coms_activo ? 'comunicaciones.php' : 'notificaciones.php' ?>" class="small">Ver todas</a>
             </div>
             <div class="card-body p-0">
                 <?php if (empty($notificaciones)): ?>
