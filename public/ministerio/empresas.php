@@ -23,6 +23,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
         set_flash('success', "Estado de la empresa actualizado a: $nuevo_estado");
         redirect('empresas.php?' . http_build_query($_GET));
     }
+
+    // Reset de contraseña: el ministerio NO ve ni elige la nueva contraseña.
+    // Genera un token de recuperación y se lo envía por email al usuario titular.
+    if ($emp_id > 0 && $accion === 'resetear_password') {
+        $stmt = $db->prepare("
+            SELECT u.id, u.email
+            FROM empresas e
+            JOIN usuarios u ON u.id = e.usuario_id
+            WHERE e.id = ? AND u.activo = 1
+        ");
+        $stmt->execute([$emp_id]);
+        $usuario = $stmt->fetch();
+
+        if (!$usuario) {
+            set_flash('error', 'La empresa no tiene un usuario activo asociado.');
+        } else {
+            $token = bin2hex(random_bytes(32));
+            $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            $db->prepare("UPDATE usuarios SET token_recuperacion = ?, token_expira = ? WHERE id = ?")
+               ->execute([$token, $expiry, $usuario['id']]);
+
+            $reset_link = rtrim(PUBLIC_URL, '/') . '/recuperar.php?token=' . urlencode($token);
+            $enviado = can_send_mail() && enviar_email_recuperacion_password((string)$usuario['email'], $reset_link);
+
+            log_activity('reset_password_solicitado_ministerio', 'usuarios', $usuario['id']);
+
+            if ($enviado) {
+                set_flash('success', "Se envió un email de recuperación a {$usuario['email']}. El token expira en 1 hora.");
+            } else {
+                set_flash('warning', "Token generado pero no se pudo enviar el email. Comparta este enlace en privado: $reset_link");
+            }
+        }
+        redirect('empresas.php?' . http_build_query($_GET));
+    }
 }
 
 // Filtros
@@ -148,10 +182,9 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                         <td><?= format_number($emp['visitas'] ?? 0) ?></td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="empresa-detalle.php?id=<?= $emp['id'] ?>" class="btn btn-outline-primary" title="Ver"><i class="bi bi-eye"></i></a>
-                                <a href="empresa-editar.php?id=<?= $emp['id'] ?>" class="btn btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                <a href="empresa-detalle.php?id=<?= $emp['id'] ?>" class="btn btn-outline-primary" title="Ver detalle"><i class="bi bi-eye"></i></a>
                                 <div class="btn-group btn-group-sm">
-                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="Acciones"></button>
                                     <ul class="dropdown-menu">
                                         <?php if (!empty($emp['token_activacion']) && !$emp['usuario_activo']): ?>
                                         <?php $url_act = rtrim(PUBLIC_URL, '/') . '/activar-cuenta.php?token=' . urlencode($emp['token_activacion']); ?>
@@ -165,6 +198,10 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                                         <?php endif; ?>
                                         <li><form method="POST" class="d-inline"><?= csrf_field() ?><input type="hidden" name="empresa_id" value="<?= $emp['id'] ?>"><button name="accion" value="activar" class="dropdown-item"><i class="bi bi-check-circle me-2"></i>Activar</button></form></li>
                                         <li><form method="POST" class="d-inline"><?= csrf_field() ?><input type="hidden" name="empresa_id" value="<?= $emp['id'] ?>"><button name="accion" value="suspender" class="dropdown-item"><i class="bi bi-pause-circle me-2"></i>Suspender</button></form></li>
+                                        <?php if (!empty($emp['usuario_activo'])): ?>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><form method="POST" class="d-inline"><?= csrf_field() ?><input type="hidden" name="empresa_id" value="<?= $emp['id'] ?>"><button name="accion" value="resetear_password" class="dropdown-item" onclick="return confirm('¿Enviar email de recuperación de contraseña al usuario titular de esta empresa?')"><i class="bi bi-key me-2"></i>Enviar reset de contraseña</button></form></li>
+                                        <?php endif; ?>
                                         <li><hr class="dropdown-divider"></li>
                                         <li><form method="POST" class="d-inline"><?= csrf_field() ?><input type="hidden" name="empresa_id" value="<?= $emp['id'] ?>"><button name="accion" value="inactivar" class="dropdown-item text-danger" onclick="return confirm('¿Desactivar esta empresa?')"><i class="bi bi-x-circle me-2"></i>Desactivar</button></form></li>
                                     </ul>

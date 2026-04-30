@@ -14,6 +14,52 @@ if ($emp_id <= 0) {
     redirect('empresas.php');
 }
 
+// Acciones administrativas (NO incluyen edición de datos: el ministerio solo administra estado y acceso).
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME] ?? '')) {
+    $accion = $_POST['accion'] ?? '';
+
+    if (in_array($accion, ['activar', 'suspender', 'inactivar'])) {
+        $estados = ['activar' => 'activa', 'suspender' => 'suspendida', 'inactivar' => 'inactiva'];
+        $nuevo_estado = $estados[$accion];
+        $db->prepare("UPDATE empresas SET estado = ? WHERE id = ?")->execute([$nuevo_estado, $emp_id]);
+        log_activity("empresa_$accion", 'empresas', $emp_id);
+        set_flash('success', "Estado actualizado a: $nuevo_estado");
+        redirect("empresa-detalle.php?id=$emp_id");
+    }
+
+    if ($accion === 'resetear_password') {
+        $stmt = $db->prepare("
+            SELECT u.id, u.email
+            FROM empresas e
+            JOIN usuarios u ON u.id = e.usuario_id
+            WHERE e.id = ? AND u.activo = 1
+        ");
+        $stmt->execute([$emp_id]);
+        $usuario = $stmt->fetch();
+
+        if (!$usuario) {
+            set_flash('error', 'La empresa no tiene un usuario activo asociado.');
+        } else {
+            $token = bin2hex(random_bytes(32));
+            $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            $db->prepare("UPDATE usuarios SET token_recuperacion = ?, token_expira = ? WHERE id = ?")
+               ->execute([$token, $expiry, $usuario['id']]);
+
+            $reset_link = rtrim(PUBLIC_URL, '/') . '/recuperar.php?token=' . urlencode($token);
+            $enviado = can_send_mail() && enviar_email_recuperacion_password((string)$usuario['email'], $reset_link);
+
+            log_activity('reset_password_solicitado_ministerio', 'usuarios', $usuario['id']);
+
+            if ($enviado) {
+                set_flash('success', "Email de recuperación enviado a {$usuario['email']}. El enlace expira en 1 hora.");
+            } else {
+                set_flash('warning', "Token generado pero no se pudo enviar el email. Comparta este enlace en privado: $reset_link");
+            }
+        }
+        redirect("empresa-detalle.php?id=$emp_id");
+    }
+}
+
 $stmt = $db->prepare("SELECT * FROM empresas WHERE id = ?");
 $stmt->execute([$emp_id]);
 $empresa = $stmt->fetch();
@@ -96,13 +142,39 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                 <p class="text-muted mb-0"><?= e($empresa['razon_social']) ?></p>
                 <?php endif; ?>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 align-items-center">
                 <?php
                 $badge_estado = ['activa' => 'bg-success', 'pendiente' => 'bg-warning text-dark', 'suspendida' => 'bg-danger', 'inactiva' => 'bg-secondary'];
                 ?>
                 <span class="badge <?= $badge_estado[$empresa['estado']] ?? 'bg-secondary' ?> fs-6"><?= ucfirst($empresa['estado']) ?></span>
-                <a href="empresa-editar.php?id=<?= $emp_id ?>" class="btn btn-outline-primary"><i class="bi bi-pencil me-1"></i>Editar</a>
+
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-gear me-1"></i>Acciones administrativas
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><h6 class="dropdown-header">Estado</h6></li>
+                        <li><form method="POST" class="d-inline"><?= csrf_field() ?><button name="accion" value="activar" class="dropdown-item"><i class="bi bi-check-circle me-2 text-success"></i>Activar</button></form></li>
+                        <li><form method="POST" class="d-inline"><?= csrf_field() ?><button name="accion" value="suspender" class="dropdown-item"><i class="bi bi-pause-circle me-2 text-warning"></i>Suspender</button></form></li>
+                        <li><form method="POST" class="d-inline"><?= csrf_field() ?><button name="accion" value="inactivar" class="dropdown-item text-danger" onclick="return confirm('¿Desactivar esta empresa? La empresa dejará de figurar en el sitio público.')"><i class="bi bi-x-circle me-2"></i>Desactivar</button></form></li>
+
+                        <?php if (!empty($empresa['usuario_id']) && !empty($empresa['usuario_activo'])): ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header">Acceso del usuario</h6></li>
+                        <li>
+                            <form method="POST" class="d-inline">
+                                <?= csrf_field() ?>
+                                <button name="accion" value="resetear_password" class="dropdown-item"
+                                        onclick="return confirm('¿Enviar email de recuperación de contraseña al usuario titular? El ministerio NO verá la nueva contraseña.')">
+                                    <i class="bi bi-key me-2 text-primary"></i>Enviar reset de contraseña
+                                </button>
+                            </form>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
             </div>
+            <small class="d-block text-muted mt-2 w-100"><i class="bi bi-shield-lock me-1"></i>Los datos del perfil son administrados exclusivamente por la empresa.</small>
         </div>
 
         <?php show_flash(); ?>
