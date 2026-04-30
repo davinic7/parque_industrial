@@ -74,6 +74,51 @@ try {
 $evolucion_labels = array_column($evolucion_data, 'periodo');
 $evolucion_values = array_map('intval', array_column($evolucion_data, 'empleados'));
 
+// Consumos por rubro (último período)
+$consumo_labels = [];
+$consumo_energia = [];
+$consumo_agua = [];
+$consumo_gas = [];
+try {
+    if ($ultimo_periodo) {
+        $stmt = $db->prepare("
+            SELECT e.rubro,
+                   SUM(COALESCE(de.consumo_energia,0)) AS energia,
+                   SUM(COALESCE(de.consumo_agua,0)) AS agua,
+                   SUM(COALESCE(de.consumo_gas,0)) AS gas
+            FROM datos_empresa de
+            INNER JOIN empresas e ON de.empresa_id = e.id
+            WHERE de.periodo = ? AND e.rubro IS NOT NULL AND e.rubro <> ''
+            GROUP BY e.rubro ORDER BY energia DESC
+        ");
+        $stmt->execute([$ultimo_periodo]);
+        $consumo_data = $stmt->fetchAll();
+        $consumo_labels  = array_column($consumo_data, 'rubro');
+        $consumo_energia = array_map('floatval', array_column($consumo_data, 'energia'));
+        $consumo_agua    = array_map('floatval', array_column($consumo_data, 'agua'));
+        $consumo_gas     = array_map('floatval', array_column($consumo_data, 'gas'));
+    }
+} catch (Throwable $e) {}
+
+// Emisiones CO2 por empresa (último período)
+$co2_labels = [];
+$co2_values = [];
+try {
+    if ($ultimo_periodo) {
+        $stmt = $db->prepare("
+            SELECT e.nombre, COALESCE(de.emisiones_co2, 0) AS co2
+            FROM datos_empresa de
+            INNER JOIN empresas e ON de.empresa_id = e.id
+            WHERE de.periodo = ? AND de.emisiones_co2 > 0
+            ORDER BY co2 DESC LIMIT 10
+        ");
+        $stmt->execute([$ultimo_periodo]);
+        $co2_data   = $stmt->fetchAll();
+        $co2_labels = array_column($co2_data, 'nombre');
+        $co2_values = array_map('floatval', array_column($co2_data, 'co2'));
+    }
+} catch (Throwable $e) {}
+
 // Puntos para mapa de calor (empresas con coordenadas y dotación)
 try {
     $stmt = $db->query("
@@ -91,35 +136,17 @@ $ministerio_nav = 'graficos';
 $extra_head = '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">';
 require_once BASEPATH . '/includes/ministerio_layout_header.php';
 ?>
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0">Gráficos y Análisis</h1>
-            <button class="btn btn-success"><i class="bi bi-download me-1"></i>Exportar PDF</button>
-        </div>
-        
-        <!-- Filtros -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <form class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="form-label">Desde</label>
-                        <input type="date" class="form-control">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Hasta</label>
-                        <input type="date" class="form-control">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Ubicación</label>
-                        <select class="form-select">
-                            <option value="">Todas</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filtrar</button>
-                    </div>
-                </form>
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <h1 class="h3 mb-0"><i class="bi bi-bar-chart-line me-2"></i>Gráficos y Análisis</h1>
+            <div class="d-flex gap-2">
+                <a href="exportar.php" class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Exportar Excel</a>
             </div>
         </div>
+        <?php if ($ultimo_periodo): ?>
+        <div class="alert alert-info small py-2 mb-4">
+            <i class="bi bi-info-circle me-1"></i>Los gráficos de empleo, consumos y CO₂ corresponden al último período declarado: <strong><?= e($ultimo_periodo) ?></strong>
+        </div>
+        <?php endif; ?>
         
         <div class="row g-4">
             <div class="col-lg-6">
@@ -171,6 +198,32 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                     </div>
                 </div>
             </div>
+
+            <!-- Consumos por rubro -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-lightning-charge text-warning me-2"></i>Consumos por rubro <?= $ultimo_periodo ? '(' . e($ultimo_periodo) . ')' : '' ?></h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartConsumos" height="220"></canvas>
+                        <p class="text-muted small mt-2 mb-0">Energía (kWh), agua (m³) y gas (m³) acumulados por rubro.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emisiones CO2 -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0"><i class="bi bi-cloud-haze2 text-danger me-2"></i>Huella de carbono (tCO₂e)</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="chartCO2" height="300"></canvas>
+                        <p class="text-muted small mt-2 mb-0">Top 10 empresas con mayor emisión declarada.</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
 <?php
@@ -190,6 +243,12 @@ $extra_scripts = '
         const evolucionLabels = ' . json_encode($evolucion_labels, JSON_UNESCAPED_UNICODE) . ';
         const evolucionValues = ' . json_encode($evolucion_values) . ';
         const heatPoints = ' . json_encode($heat_data) . ';
+        const consumoLabels  = ' . json_encode($consumo_labels, JSON_UNESCAPED_UNICODE) . ';
+        const consumoEnergia = ' . json_encode($consumo_energia) . ';
+        const consumoAgua    = ' . json_encode($consumo_agua) . ';
+        const consumoGas     = ' . json_encode($consumo_gas) . ';
+        const co2Labels = ' . json_encode($co2_labels, JSON_UNESCAPED_UNICODE) . ';
+        const co2Values = ' . json_encode($co2_values) . ';
 
         const ctxRubros = document.getElementById("chartRubros");
         if (ctxRubros && rubrosLabels.length) {
@@ -259,6 +318,48 @@ $extra_scripts = '
                     }).addTo(map);
                 }
             });
+        }
+
+        // Consumos por rubro
+        const ctxConsumos = document.getElementById("chartConsumos");
+        if (ctxConsumos && consumoLabels.length) {
+            new Chart(ctxConsumos, {
+                type: "bar",
+                data: {
+                    labels: consumoLabels,
+                    datasets: [
+                        { label: "Energía (kWh)", data: consumoEnergia, backgroundColor: "#f39c12" },
+                        { label: "Agua (m³)", data: consumoAgua, backgroundColor: "#3498db" },
+                        { label: "Gas (m³)", data: consumoGas, backgroundColor: "#95a5a6" }
+                    ]
+                },
+                options: { responsive: true, scales: { y: { beginAtZero: true } }, plugins: { legend: { position: "top" } } }
+            });
+        }
+
+        // CO2 por empresa
+        const ctxCO2 = document.getElementById("chartCO2");
+        if (ctxCO2 && co2Labels.length) {
+            new Chart(ctxCO2, {
+                type: "bar",
+                data: {
+                    labels: co2Labels,
+                    datasets: [{
+                        label: "tCO₂e",
+                        data: co2Values,
+                        backgroundColor: "#e74c3c",
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true } }
+                }
+            });
+        } else if (ctxCO2) {
+            ctxCO2.parentElement.innerHTML += "<p class=\\"text-muted text-center small\\">No hay datos de emisiones declarados en el último período.</p>";
         }
     </script>
 ';

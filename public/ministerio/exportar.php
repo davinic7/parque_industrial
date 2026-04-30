@@ -57,16 +57,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
         redirect('exportar.php');
     }
 
+    $formato = $_POST['formato'] ?? 'excel';
+
     if (!empty($datos)) {
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
-        $output = fopen('php://output', 'w');
-        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM UTF-8
-        fputcsv($output, $headers, ';');
-        foreach ($datos as $row) {
-            fputcsv($output, array_values($row), ';');
+        if ($formato === 'csv') {
+            // CSV clásico
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . str_replace('.csv', '.csv', $filename) . '"');
+            $output = fopen('php://output', 'w');
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM UTF-8
+            fputcsv($output, $headers, ';');
+            foreach ($datos as $row) {
+                fputcsv($output, array_values($row), ';');
+            }
+            fclose($output);
+            exit;
         }
-        fclose($output);
+
+        // Excel (HTML table — abre correctamente en Excel, LibreOffice y Google Sheets)
+        $xls_filename = str_replace('.csv', '.xls', $filename);
+        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $xls_filename . '"');
+        echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">';
+        echo '<head><meta charset="utf-8"><style>th{background:#1a5276;color:#fff;font-weight:bold;padding:6px 10px;} td{padding:4px 8px;border:1px solid #ddd;} table{border-collapse:collapse;font-family:Calibri,sans-serif;font-size:11pt;}</style></head>';
+        echo '<body><table>';
+        echo '<tr>';
+        foreach ($headers as $h) { echo '<th>' . htmlspecialchars($h) . '</th>'; }
+        echo '</tr>';
+        foreach ($datos as $row) {
+            echo '<tr>';
+            foreach (array_values($row) as $val) {
+                echo '<td>' . htmlspecialchars((string) $val) . '</td>';
+            }
+            echo '</tr>';
+        }
+        echo '</table></body></html>';
         exit;
     } else {
         set_flash('error', 'No hay datos para exportar');
@@ -97,10 +122,11 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                     <div class="card-body">
                         <p>Exporta el listado completo de empresas registradas con todos sus datos de contacto e información general.</p>
                         <p class="text-muted"><strong><?= $total_empresas ?></strong> empresas registradas</p>
-                        <form method="POST">
+                        <form method="POST" class="d-flex gap-2">
                             <?= csrf_field() ?>
                             <input type="hidden" name="exportar" value="empresas">
-                            <button class="btn btn-primary"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Descargar CSV</button>
+                            <button name="formato" value="excel" class="btn btn-primary"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</button>
+                            <button name="formato" value="csv" class="btn btn-outline-secondary btn-sm"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
                         </form>
                     </div>
                 </div>
@@ -122,7 +148,10 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-                            <button class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet me-2"></i>Descargar CSV</button>
+                            <div class="d-flex gap-2">
+                                <button name="formato" value="excel" class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Excel</button>
+                                <button name="formato" value="csv" class="btn btn-outline-secondary btn-sm"><i class="bi bi-filetype-csv me-1"></i>CSV</button>
+                            </div>
                         </form>
                     </div>
                 </div>
