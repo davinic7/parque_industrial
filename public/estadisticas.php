@@ -8,26 +8,84 @@ $page_title = 'Estadísticas';
 
 try {
     $db = getDB();
-    
+
     // Estadísticas generales
     $stats = get_estadisticas_generales();
-    
+
     // Empresas por rubro
     $rubros_data = get_rubros_con_conteo();
-    
+
     // Empresas por ubicación
     $stmt = $db->query("SELECT ubicacion as nombre, COUNT(*) as total FROM empresas WHERE ubicacion IS NOT NULL GROUP BY ubicacion ORDER BY total DESC");
     $ubicaciones_data = $stmt->fetchAll();
-    
+
     // Total por estado (si aplica)
     $stmt = $db->query("SELECT COUNT(*) as total FROM empresas");
     $total_empresas = $stmt->fetch()['total'];
-    
+
 } catch (Exception $e) {
     $stats = ['total_empresas' => 0, 'total_empresas_activas' => 0, 'total_empleados' => 0, 'total_rubros' => 0];
     $rubros_data = [];
     $ubicaciones_data = [];
     $total_empresas = 0;
+}
+
+// --- Datos reales desde datos_empresa ---
+$evolucion_labels = [];
+$evolucion_values = [];
+$consumo_totales = ['energia' => 0, 'agua' => 0, 'gas' => 0];
+$co2_real_labels = [];
+$co2_real_values = [];
+$tiene_datos_reales = false;
+
+try {
+    $db = getDB();
+
+    // Evolución de empleo por período
+    $stmt = $db->query("
+        SELECT periodo, SUM(dotacion_total) AS empleados
+        FROM datos_empresa
+        WHERE estado IN ('enviado','aprobado')
+        GROUP BY periodo ORDER BY periodo
+    ");
+    $evo = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $evolucion_labels = array_column($evo, 'periodo');
+    $evolucion_values = array_map('intval', array_column($evo, 'empleados'));
+
+    // Consumos totales (último período)
+    $ultimo_periodo = $db->query("SELECT MAX(periodo) FROM datos_empresa WHERE estado IN ('enviado','aprobado')")->fetchColumn();
+    if ($ultimo_periodo) {
+        $stmt = $db->prepare("
+            SELECT SUM(COALESCE(consumo_energia,0)) AS energia,
+                   SUM(COALESCE(consumo_agua,0)) AS agua,
+                   SUM(COALESCE(consumo_gas,0)) AS gas
+            FROM datos_empresa WHERE periodo = ? AND estado IN ('enviado','aprobado')
+        ");
+        $stmt->execute([$ultimo_periodo]);
+        $c = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($c) {
+            $consumo_totales = [
+                'energia' => round((float)($c['energia'] ?? 0), 1),
+                'agua' => round((float)($c['agua'] ?? 0), 1),
+                'gas' => round((float)($c['gas'] ?? 0), 1),
+            ];
+        }
+    }
+
+    // CO2 real — sumado por período
+    $stmt = $db->query("
+        SELECT periodo, SUM(COALESCE(emisiones_co2, 0)) AS co2
+        FROM datos_empresa
+        WHERE estado IN ('enviado','aprobado') AND emisiones_co2 > 0
+        GROUP BY periodo ORDER BY periodo
+    ");
+    $co2rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $co2_real_labels = array_column($co2rows, 'periodo');
+    $co2_real_values = array_map('floatval', array_column($co2rows, 'co2'));
+
+    $tiene_datos_reales = !empty($evolucion_labels) || !empty($co2_real_labels);
+} catch (Throwable $e) {
+    // sin datos reales, se muestran los de config
 }
 
 $visibles_json = get_config('estadisticas_visibles', '["header","rubros_pie","rubros_barras","ubicacion","resumen","distribucion","info"]');
@@ -169,23 +227,74 @@ require_once BASEPATH . '/includes/header.php';
             </div>
             <?php endif; ?>
 
+            <?php if (!empty($evolucion_labels)): ?>
+            <!-- Evolución de empleo -->
+            <div class="col-lg-8">
+                <div class="chart-box h-100">
+                    <div class="chart-title"><i class="bi bi-graph-up-arrow me-2"></i>EVOLUCIÓN DE EMPLEO DECLARADO</div>
+                    <canvas id="chartEvolucion" height="200"></canvas>
+                    <p class="text-muted small mt-2 mb-0">Total de empleados declarados por período en las declaraciones juradas trimestrales.</p>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($consumo_totales['energia'] > 0 || $consumo_totales['agua'] > 0 || $consumo_totales['gas'] > 0): ?>
+            <!-- Consumos acumulados -->
+            <div class="col-lg-4">
+                <div class="chart-box h-100">
+                    <div class="chart-title"><i class="bi bi-lightning-charge me-2"></i>CONSUMOS <?= $ultimo_periodo ? '(' . e($ultimo_periodo) . ')' : '' ?></div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="fs-3 fw-bold text-warning"><?= number_format($consumo_totales['energia'], 0, ',', '.') ?></div>
+                                <small class="text-muted">kWh Energia</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="fs-4 fw-bold text-primary"><?= number_format($consumo_totales['agua'], 0, ',', '.') ?></div>
+                                <small class="text-muted">m3 Agua</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center p-3 bg-light rounded">
+                                <div class="fs-4 fw-bold text-secondary"><?= number_format($consumo_totales['gas'], 0, ',', '.') ?></div>
+                                <small class="text-muted">m3 Gas</small>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">Consumos acumulados del ultimo periodo declarado.</p>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <!-- Gráfico Huella de Carbono -->
             <div class="col-12" id="huella">
                 <div class="chart-box">
-                    <div class="chart-title"><i class="bi bi-cloud-arrow-down me-2"></i>HUELLA DE CARBONO ANUAL (tCO2e)</div>
+                    <div class="chart-title"><i class="bi bi-cloud-arrow-down me-2"></i>HUELLA DE CARBONO (tCO2e)</div>
                     <?php
-                    $co2_raw = get_config('huella_carbono_anual', '{"2020":420,"2021":395,"2022":410,"2023":385,"2024":370,"2025":355}');
-                    $co2_data = json_decode($co2_raw, true);
-                    if (!is_array($co2_data) || empty($co2_data)) {
-                        $co2_data = ['2020' => 420, '2021' => 395, '2022' => 410, '2023' => 385, '2024' => 370, '2025' => 355];
+                    // Intentar datos reales primero, fallback a config
+                    if (!empty($co2_real_labels)) {
+                        $co2_chart_labels = $co2_real_labels;
+                        $co2_chart_values = $co2_real_values;
+                        $co2_fuente = 'Datos calculados a partir de las declaraciones juradas de las empresas.';
+                    } else {
+                        $co2_raw = get_config('huella_carbono_anual', '{"2020":420,"2021":395,"2022":410,"2023":385,"2024":370,"2025":355}');
+                        $co2_data = json_decode($co2_raw, true);
+                        if (!is_array($co2_data) || empty($co2_data)) {
+                            $co2_data = ['2020' => 420, '2021' => 395, '2022' => 410, '2023' => 385, '2024' => 370, '2025' => 355];
+                        }
+                        ksort($co2_data);
+                        $co2_chart_labels = array_keys($co2_data);
+                        $co2_chart_values = array_values($co2_data);
+                        $co2_fuente = 'Valores estimados actualizados por el Ministerio de Produccion.';
                     }
-                    ksort($co2_data);
                     ?>
                     <canvas id="chartCO2" height="100"></canvas>
                     <p class="text-muted small mt-3 mb-0">
                         <i class="bi bi-info-circle me-1"></i>
-                        Toneladas de CO2 equivalente emitidas anualmente por las empresas del parque industrial.
-                        Los valores son actualizados por el Ministerio de Producción.
+                        Toneladas de CO2 equivalente emitidas por las empresas del parque industrial.
+                        <?= e($co2_fuente) ?>
                     </p>
                 </div>
             </div>
@@ -221,8 +330,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    const co2Labels = <?= json_encode(array_keys($co2_data)) ?>;
-    const co2Values = <?= json_encode(array_values($co2_data)) ?>;
+    // Evolución de empleo
+    const evoLabels = <?= json_encode($evolucion_labels, JSON_UNESCAPED_UNICODE) ?>;
+    const evoValues = <?= json_encode($evolucion_values) ?>;
+    const evoEl = document.getElementById('chartEvolucion');
+    if (evoEl && evoLabels.length) {
+        new Chart(evoEl, {
+            type: 'line',
+            data: {
+                labels: evoLabels,
+                datasets: [{
+                    label: 'Empleados declarados',
+                    data: evoValues,
+                    borderColor: '#1a5276',
+                    backgroundColor: 'rgba(26,82,118,0.1)',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#1a5276'
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
+
+    const co2Labels = <?= json_encode($co2_chart_labels, JSON_UNESCAPED_UNICODE) ?>;
+    const co2Values = <?= json_encode($co2_chart_values) ?>;
     const co2El = document.getElementById('chartCO2');
     if (co2El) {
         new Chart(co2El, {
