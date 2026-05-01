@@ -20,16 +20,25 @@
 --   después si se necesita precisión.
 -- ============================================================
 
-START TRANSACTION;
+-- ─────────────────────────────────────────────────────────────
+-- 0. Índice único para garantizar idempotencia (ANTES de la TX
+--    porque DDL hace commit implícito en MySQL).
+-- ─────────────────────────────────────────────────────────────
+SET @idx_exists = (
+    SELECT COUNT(*) FROM information_schema.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'conversaciones'
+      AND INDEX_NAME = 'ux_conv_referencia'
+);
+SET @sql = IF(@idx_exists = 0,
+    'CREATE UNIQUE INDEX ux_conv_referencia ON conversaciones (referencia_tipo, referencia_id)',
+    'SELECT 1'
+);
+PREPARE _stmt FROM @sql;
+EXECUTE _stmt;
+DEALLOCATE PREPARE _stmt;
 
--- ─────────────────────────────────────────────────────────────
--- 0. Índice único para garantizar idempotencia
---    Marca cada conversación migrada con referencia_tipo='migrado_v1'
---    y referencia_id = id del mensaje raíz original.
---    INSERT IGNORE del paso 1 se apoya en este índice.
--- ─────────────────────────────────────────────────────────────
-CREATE UNIQUE INDEX IF NOT EXISTS ux_conv_referencia
-    ON conversaciones (referencia_tipo, referencia_id);
+START TRANSACTION;
 
 -- ─────────────────────────────────────────────────────────────
 -- 1. CONVERSACIONES — una por cada hilo raíz
