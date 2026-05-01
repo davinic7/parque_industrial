@@ -221,22 +221,24 @@ $coms_empresas_destino      = $coms_empresas_destino      ?? [];
             <span><i class="bi bi-archive me-2"></i>Archivadas</span>
         </a>
 
-        <h6>Categorias</h6>
-        <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="tramite">
-            <span><i class="bi bi-file-earmark-text me-2"></i>Tramites</span>
-        </a>
-        <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="consulta">
-            <span><i class="bi bi-question-circle me-2"></i>Consultas</span>
-        </a>
-        <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="reclamo">
-            <span><i class="bi bi-exclamation-triangle me-2"></i>Reclamos</span>
-        </a>
-        <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="comunicado">
-            <span><i class="bi bi-megaphone me-2"></i>Comunicados</span>
-        </a>
-        <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="formulario">
-            <span><i class="bi bi-clipboard-check me-2"></i>Formularios</span>
-        </a>
+        <h6>Categorias <i class="bi bi-grip-vertical float-end opacity-50" title="Arrastra para reordenar" style="cursor:grab;"></i></h6>
+        <div id="coms-cat-sortable">
+            <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="tramite">
+                <span><i class="bi bi-file-earmark-text me-2"></i>Tramites</span>
+            </a>
+            <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="consulta">
+                <span><i class="bi bi-question-circle me-2"></i>Consultas</span>
+            </a>
+            <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="reclamo">
+                <span><i class="bi bi-exclamation-triangle me-2"></i>Reclamos</span>
+            </a>
+            <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="comunicado">
+                <span><i class="bi bi-megaphone me-2"></i>Comunicados</span>
+            </a>
+            <a class="nav-link" data-filter-estado="abierta" data-filter-categoria="formulario">
+                <span><i class="bi bi-clipboard-check me-2"></i>Formularios</span>
+            </a>
+        </div>
 
         <hr>
         <button class="btn btn-primary btn-sm w-100" id="btn-nueva-conv">
@@ -776,7 +778,65 @@ $coms_empresas_destino      = $coms_empresas_destino      ?? [];
         $plantillaSearch.addEventListener('input', () => renderPlantillas($plantillaSearch.value.toLowerCase()));
     }
 
+    // ============== Drag & drop categorias (SortableJS) ==============
+    function initSortable() {
+        var container = document.getElementById('coms-cat-sortable');
+        if (!container || typeof Sortable === 'undefined') return;
+        Sortable.create(container, {
+            animation: 150,
+            ghostClass: 'bg-light',
+            handle: '.nav-link',
+            onEnd: function () {
+                // Guardar orden en localStorage
+                var orden = [];
+                container.querySelectorAll('.nav-link[data-filter-categoria]').forEach(function (el) {
+                    orden.push(el.dataset.filterCategoria);
+                });
+                try { localStorage.setItem('coms_cat_orden', JSON.stringify(orden)); } catch (e) {}
+            }
+        });
+    }
+    // Restaurar orden guardado
+    (function () {
+        try {
+            var saved = JSON.parse(localStorage.getItem('coms_cat_orden') || '[]');
+            if (!saved.length) return;
+            var container = document.getElementById('coms-cat-sortable');
+            if (!container) return;
+            var items = {};
+            container.querySelectorAll('.nav-link[data-filter-categoria]').forEach(function (el) {
+                items[el.dataset.filterCategoria] = el;
+            });
+            saved.forEach(function (cat) {
+                if (items[cat]) container.appendChild(items[cat]);
+            });
+        } catch (e) {}
+    })();
+
     // ============== Init ==============
     cargarLista();
+    initSortable();
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script>
+// Re-init sortable after CDN loads (si cargó después del IIFE)
+(function () {
+    var container = document.getElementById('coms-cat-sortable');
+    if (container && typeof Sortable !== 'undefined' && !container._sortable) {
+        container._sortable = true;
+        Sortable.create(container, {
+            animation: 150,
+            ghostClass: 'bg-light',
+            handle: '.nav-link',
+            onEnd: function () {
+                var orden = [];
+                container.querySelectorAll('.nav-link[data-filter-categoria]').forEach(function (el) {
+                    orden.push(el.dataset.filterCategoria);
+                });
+                try { localStorage.setItem('coms_cat_orden', JSON.stringify(orden)); } catch (e) {}
+            }
+        });
+    }
 })();
 </script>

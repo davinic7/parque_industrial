@@ -165,6 +165,8 @@ $mn = static function (string $key) use ($ministerio_nav): string {
     ];
     var apiUrl = '<?= rtrim(PUBLIC_URL, '/') ?>/api/comunicaciones/badge.php';
 
+    var lastCount = -1;
+
     function updateBadges(n) {
         var txt = n > 99 ? '99+' : String(n);
         badgeEls.forEach(function (el) {
@@ -174,16 +176,39 @@ $mn = static function (string $key) use ($ministerio_nav): string {
         });
     }
 
+    function showNotif(n) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        if (document.hasFocus()) return;
+        try {
+            new Notification('Parque Industrial', {
+                body: n === 1 ? 'Tiene 1 mensaje nuevo' : 'Tiene ' + n + ' mensajes nuevos',
+                icon: '<?= rtrim(PUBLIC_URL, '/') ?>/img/favicon.png',
+                tag: 'coms-badge'
+            });
+        } catch (e) {}
+    }
+
     function fetchBadge() {
         fetch(apiUrl, { credentials: 'same-origin' })
             .then(function (r) { return r.ok ? r.json() : null; })
             .then(function (data) {
                 if (data && typeof data.no_leidos === 'number') {
-                    updateBadges(data.no_leidos);
+                    var n = data.no_leidos;
+                    updateBadges(n);
+                    if (n > 0 && n > lastCount && lastCount !== -1) showNotif(n);
+                    lastCount = n;
                 }
             })
             .catch(function () { /* silencioso */ });
     }
+
+    // Pedir permiso de notificaciones al primer click
+    document.addEventListener('click', function reqNotif() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        document.removeEventListener('click', reqNotif);
+    });
 
     setInterval(fetchBadge, 30000);
 }());
