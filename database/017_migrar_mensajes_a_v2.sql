@@ -55,12 +55,7 @@ SELECT
         WHEN u.rol = 'empresa'                THEN 'empresa'
         ELSE                                       'sistema'
     END                                                            AS iniciada_por,
-    CASE
-        WHEN m.categoria IN ('tramite','consulta','reclamo',
-                             'comunicado','formulario','sistema')
-        THEN m.categoria
-        ELSE 'consulta'
-    END                                                            AS categoria,
+    'consulta'                                                     AS categoria,
     'abierta'                                                      AS estado,
     'migrado_v1'                                                   AS referencia_tipo,
     m.id                                                           AS referencia_id,
