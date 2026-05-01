@@ -139,6 +139,7 @@ require_once BASEPATH . '/includes/ministerio_layout_header.php';
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
             <h1 class="h3 mb-0"><i class="bi bi-bar-chart-line me-2"></i>Gráficos y Análisis</h1>
             <div class="d-flex gap-2">
+                <a href="reporte.php" class="btn btn-outline-primary"><i class="bi bi-file-earmark-pdf me-1"></i>Reporte PDF</a>
                 <a href="exportar.php" class="btn btn-success"><i class="bi bi-file-earmark-spreadsheet me-1"></i>Exportar Excel</a>
             </div>
         </div>

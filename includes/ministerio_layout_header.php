@@ -117,6 +117,7 @@ $mn = static function (string $key) use ($ministerio_nav): string {
             <div class="empresa-sidebar-section">Analítica</div>
             <a href="graficos.php" class="<?= $mn('graficos') ?>"><i class="fa-solid fa-chart-line"></i> Gráficos y datos</a>
             <a href="exportar.php" class="<?= $mn('exportar') ?>"><i class="fa-solid fa-download"></i> Exportar datos</a>
+            <a href="reporte.php" class="<?= $mn('reporte') ?>"><i class="fa-solid fa-file-pdf"></i> Reporte trimestral</a>
 
             <div class="empresa-sidebar-section">Tu cuenta</div>
             <a href="notificaciones.php" class="<?= $mn('notificaciones') ?>"><i class="fa-solid fa-bell"></i> Notificaciones<?php if ($badge_notif > 0): ?> <span class="badge bg-primary rounded-pill"><?= $badge_notif > 99 ? '99+' : $badge_notif ?></span><?php endif; ?></a>
