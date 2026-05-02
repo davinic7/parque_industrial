@@ -120,6 +120,8 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
     </div>
 </div>
 
+<?php
+$extra_scripts = <<<'JSEOF'
 <script>
 (function () {
     const form        = document.getElementById('form-cambiar-pass');
@@ -129,8 +131,6 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
     const modal       = new bootstrap.Modal(modalEl);
 
     btnAbrir.addEventListener('click', function () {
-        // Validación HTML5 nativa antes de abrir el modal: si falta algún campo o no
-        // matchea minlength, mostramos los mensajes del navegador en lugar del modal.
         if (!form.checkValidity()) {
             form.reportValidity();
             return;
@@ -150,5 +150,6 @@ require_once BASEPATH . '/includes/empresa_layout_header.php';
     });
 })();
 </script>
-
-<?php require_once BASEPATH . '/includes/empresa_layout_footer.php'; ?>
+JSEOF;
+require_once BASEPATH . '/includes/empresa_layout_footer.php';
+?>
