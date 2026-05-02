@@ -256,12 +256,17 @@ class Auth {
             }
 
             $token = bin2hex(random_bytes(32));
-            $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
+            // token_expira se calcula con NOW() del DB (no con date() de PHP) para que
+            // siempre use el mismo reloj que la comparación `token_expira > NOW()` del
+            // resetPassword. Si difieren los timezones (PHP en ART, MySQL en UTC) el
+            // token quedaba expirado al instante.
             $stmt = $this->db->prepare("
-                UPDATE usuarios SET token_recuperacion = ?, token_expira = ? WHERE id = ?
+                UPDATE usuarios
+                SET token_recuperacion = ?, token_expira = DATE_ADD(NOW(), INTERVAL 1 HOUR)
+                WHERE id = ?
             ");
-            $stmt->execute([$token, $expiry, $user['id']]);
+            $stmt->execute([$token, $user['id']]);
 
             $reset_link = rtrim(PUBLIC_URL, '/') . '/recuperar.php?token=' . urlencode($token);
             if (can_send_mail()) {
