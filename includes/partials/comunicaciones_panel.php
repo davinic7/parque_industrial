@@ -607,6 +607,18 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     }
 
+    function linkifyMensaje(textoEscapado) {
+        // Reemplaza URLs http(s) por un botón. Trabaja sobre texto ya escapado.
+        const urlRe = /(https?:\/\/[^\s<>"']+)/g;
+        return textoEscapado.replace(urlRe, function (url) {
+            const limpio = url.replace(/[).,;:!?]+$/, '');
+            const trail = url.slice(limpio.length);
+            return `<a href="${limpio}" target="_blank" rel="noopener" class="btn btn-sm btn-primary my-1 me-1">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Abrir enlace
+            </a>${trail}`;
+        });
+    }
+
     function renderMsg(m) {
         const out = m.remitente_tipo === ACTOR;
         const adj = (m.adjuntos || []).map(a => `
@@ -614,10 +626,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 <i class="bi bi-paperclip"></i> ${escapeHtml(a.nombre)} (${(a.tamano/1024).toFixed(0)} KB)
             </a>
         `).join(' ');
+        const contenidoHtml = linkifyMensaje(escapeHtml(m.contenido)).replace(/\n/g, '<br>');
         return `
             <div class="coms-msg ${out ? 'out' : 'in'}">
                 <div>
-                    <div class="bubble">${escapeHtml(m.contenido)}${adj ? '<div class="mt-2">' + adj + '</div>' : ''}</div>
+                    <div class="bubble">${contenidoHtml}${adj ? '<div class="mt-2">' + adj + '</div>' : ''}</div>
                     <div class="meta">
                         ${out ? 'Enviado' : (m.remitente_email || m.remitente_tipo)} &middot; ${fmt(m.created_at)}
                     </div>
