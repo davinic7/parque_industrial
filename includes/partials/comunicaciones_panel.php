@@ -394,7 +394,7 @@ $coms_empresas_destino      = $coms_empresas_destino      ?? [];
 <?php endif; ?>
 
 <script>
-(function () {
+document.addEventListener('DOMContentLoaded', function () {
     const shell = document.getElementById('coms-shell');
     const ACTOR    = shell.dataset.actor;
     const API_BASE = shell.dataset.api;
@@ -816,7 +816,7 @@ $coms_empresas_destino      = $coms_empresas_destino      ?? [];
     // ============== Init ==============
     cargarLista();
     initSortable();
-})();
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 <script>
