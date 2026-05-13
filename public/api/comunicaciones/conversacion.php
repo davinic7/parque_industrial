@@ -62,6 +62,53 @@ try {
         ];
     }, $mensajes);
 
+    $referencia = null;
+    $ref_tipo = $conv['referencia_tipo'] ?? null;
+    $ref_id = isset($conv['referencia_id']) ? (int)$conv['referencia_id'] : 0;
+    if ($ref_tipo === 'formulario_dinamico' && $ref_id > 0) {
+        $emp_for_ref = $conv['empresa_id'] !== null ? (int)$conv['empresa_id'] : (int)($coms_empresa_id ?? 0);
+        try {
+            $stmtF = $db->prepare("
+                SELECT f.id, f.titulo, f.descripcion, f.estado,
+                       fr.estado AS estado_respuesta,
+                       fr.enviado_at AS respuesta_enviada_at,
+                       (
+                           SELECT COALESCE(fd.plazo_hasta, fe.fecha_limite)
+                           FROM formulario_destinatarios fd
+                           INNER JOIN formulario_envios fe ON fe.id = fd.envio_id
+                           WHERE fe.formulario_id = f.id AND fd.empresa_id = ?
+                           ORDER BY fe.created_at DESC
+                           LIMIT 1
+                       ) AS fecha_limite
+                FROM formularios_dinamicos f
+                LEFT JOIN formulario_respuestas fr
+                       ON fr.formulario_id = f.id AND fr.empresa_id = ?
+                WHERE f.id = ?
+                ORDER BY fr.id DESC
+                LIMIT 1
+            ");
+            $stmtF->execute([$emp_for_ref, $emp_for_ref, $ref_id]);
+            $detalle = $stmtF->fetch(PDO::FETCH_ASSOC);
+            if ($detalle) {
+                $referencia = [
+                    'tipo' => 'formulario_dinamico',
+                    'id'   => (int)$detalle['id'],
+                    'detalle' => [
+                        'titulo'              => $detalle['titulo'],
+                        'descripcion'         => $detalle['descripcion'],
+                        'estado_publicacion'  => $detalle['estado'],
+                        'fecha_limite'        => $detalle['fecha_limite'],
+                        'estado_respuesta'    => $detalle['estado_respuesta'],
+                        'respuesta_enviada_at'=> $detalle['respuesta_enviada_at'],
+                        'url_completar'       => rtrim(EMPRESA_URL, '/') . '/formulario_dinamico.php?id=' . (int)$detalle['id'],
+                    ],
+                ];
+            }
+        } catch (Exception $e) {
+            error_log('coms conversacion referencia: ' . $e->getMessage());
+        }
+    }
+
     echo json_encode([
         'ok' => true,
         'conversacion' => [
@@ -73,8 +120,11 @@ try {
             'categoria'            => $conv['categoria'],
             'estado'               => $conv['estado'],
             'es_comunicado_global' => $conv['empresa_id'] === null,
+            'referencia_tipo'      => $ref_tipo,
+            'referencia_id'        => $ref_id > 0 ? $ref_id : null,
             'created_at'           => $conv['created_at'],
         ],
+        'referencia' => $referencia,
         'mensajes' => $mensajes,
     ]);
 } catch (Exception $e) {

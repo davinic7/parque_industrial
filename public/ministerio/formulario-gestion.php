@@ -236,11 +236,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
                                     'referencia_tipo'  => 'formulario_dinamico',
                                     'referencia_id'    => $form_id,
                                 ]);
-                                $contenido = 'Se le asignó un nuevo formulario: ' . $formulario['titulo'] . '.';
-                                if ($fecha_limite_sql) {
-                                    $contenido .= ' Fecha límite: ' . $fecha_limite_sql . '.';
+                                $contenido = 'El Ministerio le asignó un nuevo formulario para completar. Use el botón "Completar formulario" para acceder.';
+                                if (!empty($formulario['descripcion'])) {
+                                    $contenido .= "\n\n" . $formulario['descripcion'];
                                 }
-                                $contenido .= ' Acceda al formulario: ' . $url_form;
                                 coms_enviar_mensaje([
                                     'conversacion_id' => $conv_id,
                                     'remitente_id'    => $coms_remitente_id,

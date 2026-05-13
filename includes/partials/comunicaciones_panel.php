@@ -555,8 +555,56 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelector('[data-act="archivar"]').classList.toggle('d-none', archivada);
         document.querySelector('[data-act="desarchivar"]').classList.toggle('d-none', !archivada);
 
-        $threadMsgs.innerHTML = data.mensajes.map(m => renderMsg(m)).join('');
+        const refCard = renderReferenciaCard(data.referencia);
+        $threadMsgs.innerHTML = refCard + data.mensajes.map(m => renderMsg(m)).join('');
         $threadMsgs.scrollTop = $threadMsgs.scrollHeight;
+    }
+
+    function renderReferenciaCard(ref) {
+        if (!ref || ref.tipo !== 'formulario_dinamico' || !ref.detalle) return '';
+        const d = ref.detalle;
+        const respondido = d.estado_respuesta === 'enviado';
+        const limite = d.fecha_limite || null;
+        const vencido = !respondido && limite && new Date(limite + 'T23:59:59') < new Date();
+
+        let badgeClass = 'bg-warning text-dark', badgeText = 'Pendiente';
+        if (respondido) { badgeClass = 'bg-success'; badgeText = 'Respondido'; }
+        else if (vencido) { badgeClass = 'bg-danger'; badgeText = 'Vencido'; }
+
+        const desc = d.descripcion ? `<p class="mb-2 small text-muted">${escapeHtml(d.descripcion)}</p>` : '';
+        const limiteHtml = limite
+            ? `<div class="small mb-3"><i class="bi bi-calendar-event me-1"></i>Fecha límite: <strong>${escapeHtml(limite)}</strong></div>`
+            : '';
+
+        let botonHtml = '';
+        if (ACTOR === 'empresa') {
+            const btnLabel = respondido ? 'Ver mi respuesta' : 'Completar formulario';
+            const btnClass = respondido ? 'btn-outline-success' : 'btn-primary';
+            const icon = respondido ? 'bi-check2-circle' : 'bi-pencil-square';
+            botonHtml = `<a href="${escapeHtml(d.url_completar)}" class="btn ${btnClass}">
+                <i class="bi ${icon} me-1"></i>${btnLabel}
+            </a>`;
+        } else {
+            botonHtml = `<a href="../ministerio/formulario-gestion.php?id=${ref.id}&tab=respuestas" class="btn btn-outline-primary">
+                <i class="bi bi-clipboard-data me-1"></i>Ver respuestas
+            </a>`;
+        }
+
+        return `
+            <div class="card border-primary mb-3 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-file-earmark-text me-1"></i>${escapeHtml(d.titulo)}
+                        </h5>
+                        <span class="badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    ${desc}
+                    ${limiteHtml}
+                    ${botonHtml}
+                </div>
+            </div>
+        `;
     }
 
     function renderMsg(m) {
