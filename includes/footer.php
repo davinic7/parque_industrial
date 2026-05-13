@@ -51,6 +51,7 @@
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="<?= PUBLIC_URL ?>/js/chart-percent-labels.js"></script>
     
     <!-- Custom JS -->
     <script src="<?= PUBLIC_URL ?>/js/main.js"></script>
