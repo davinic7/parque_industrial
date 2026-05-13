@@ -6,6 +6,7 @@
  * formulario-seguimiento.php y formulario-enviar.php.
  */
 require_once __DIR__ . '/../../config/config.php';
+require_once BASEPATH . '/includes/comunicaciones.php';
 
 if (!$auth->requireRole(['ministerio', 'admin'], PUBLIC_URL . '/login.php')) {
     exit;
@@ -212,6 +213,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
                         VALUES (?, ?, 1, NOW(), ?)
                     ");
                     $url_form = rtrim(EMPRESA_URL, '/') . '/formulario_dinamico.php?id=' . $form_id;
+                    $coms_activo = FEATURE_CENTRO_COMS && coms_schema_disponible();
+                    $coms_remitente_id = (int)($_SESSION['user_id'] ?? 0);
 
                     foreach ($empresas_sel as $emp) {
                         $insD->execute([$nuevo_envio_id, (int)$emp['id'], $fecha_limite_sql]);
@@ -222,6 +225,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verify_csrf($_POST[CSRF_TOKEN_NAME]
                             'Debe completar el formulario asignado por el ministerio.',
                             $url_form
                         );
+
+                        if ($coms_activo && $coms_remitente_id > 0) {
+                            try {
+                                $conv_id = coms_crear_conversacion([
+                                    'titulo'           => 'Nuevo formulario: ' . $formulario['titulo'],
+                                    'empresa_id'       => (int)$emp['id'],
+                                    'iniciada_por'     => 'ministerio',
+                                    'categoria'        => 'formulario',
+                                    'referencia_tipo'  => 'formulario_dinamico',
+                                    'referencia_id'    => $form_id,
+                                ]);
+                                $contenido = 'Se le asignó un nuevo formulario: ' . $formulario['titulo'] . '.';
+                                if ($fecha_limite_sql) {
+                                    $contenido .= ' Fecha límite: ' . $fecha_limite_sql . '.';
+                                }
+                                $contenido .= ' Acceda al formulario: ' . $url_form;
+                                coms_enviar_mensaje([
+                                    'conversacion_id' => $conv_id,
+                                    'remitente_id'    => $coms_remitente_id,
+                                    'remitente_tipo'  => 'ministerio',
+                                    'contenido'       => $contenido,
+                                ]);
+                            } catch (Throwable $eComs) {
+                                error_log('formulario-gestion coms: ' . $eComs->getMessage());
+                            }
+                        }
+
                         $mail_to = !empty($emp['email_contacto']) && is_valid_email($emp['email_contacto'])
                             ? $emp['email_contacto']
                             : ($emp['email_acceso'] ?? '');

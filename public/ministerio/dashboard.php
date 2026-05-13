@@ -188,6 +188,7 @@ $lat = (float) MAP_DEFAULT_LAT;
 $lng = (float) MAP_DEFAULT_LNG;
 $extra_scripts = <<<HTML
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{$pu}/js/chart-percent-labels.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
     <script src="{$pu}/js/parque-leaflet.js"></script>
     <script>
